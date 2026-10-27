@@ -35,5 +35,10 @@
     "google-search-console",
     "google-ads",
     "bing-webmaster"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abdoul88/marketing-mcp.git"
+  },
+  "homepage": "https://github.com/Abdoul88/marketing-mcp#readme"
 }

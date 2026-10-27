@@ -77,7 +77,7 @@ flowchart LR
 ### Installation
 
 ```bash
-git clone https://github.com/abdouldoro-diallo/marketing-mcp.git
+git clone https://github.com/Abdoul88/marketing-mcp.git
 cd marketing-mcp
 npm install
 cp .env.example .env
