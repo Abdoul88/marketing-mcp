@@ -2,21 +2,30 @@
   "name": "marketing-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "Serveur MCP local et en lecture seule qui donne à Claude accès à Google Search Console, Google Ads et Bing Webmaster Tools.",
+  "description": "Serveur MCP local en lecture seule (Search Console, Google Ads, Bing Webmaster) et dashboard SEO gratuit.",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "start": "tsx src/index.ts",
-    "auth:google": "tsx src/auth-google.ts",
+    "auth:google": "tsx --use-system-ca src/auth-google.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dashboard": "tsx --use-system-ca src/dashboard/server.ts",
+    "charte": "tsx src/scripts/charte.ts",
+    "visuel": "tsx src/scripts/visuel.ts",
+    "facebook": "tsx src/scripts/facebook.ts",
+    "discover": "tsx src/scripts/discover.ts",
+    "indexnow": "tsx src/scripts/indexnow.ts",
+    "wordpress": "tsx src/scripts/wordpress.ts",
+    "suivi": "tsx src/scripts/suivi.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "^2.4.0",
     "@modelcontextprotocol/server": "^2.4.0",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@resvg/resvg-js": "^2.6.2"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

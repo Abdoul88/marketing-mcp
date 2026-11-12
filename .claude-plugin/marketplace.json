@@ -1,0 +1,13 @@
+{
+  "name": "marketing-mcp",
+  "owner": {
+    "name": "Abdoul Diallo"
+  },
+  "plugins": [
+    {
+      "name": "seo-pilote",
+      "source": "./plugin",
+      "description": "Pilotage SEO multi-sites : opportunités Search Console, concurrents (Firecrawl), technique, maillage, création d'articles avec visuels, Facebook et Discover. Gratuit, s'appuie sur marketing-mcp."
+    }
+  ]
+}
