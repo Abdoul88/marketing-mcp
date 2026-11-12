@@ -171,3 +171,20 @@ avec les clics et impressions. « À renforcer » = au moins 500 impressions et 
 PageRank ≥ 60 sans clic. Un clic sur une URL liste les pages qui pointent vers elle et ses liens sortants.
 
 Chaque vue commence par un encadré « À quoi sert cette vue ? » (ce qu'on y voit, comment lire, que faire), repliable.
+
+### Visibilité locale par pays (API Yext)
+
+Avec `YEXT_API_KEY` (clé en lecture seule) dans `.env`, la vue « Visibilité locale » lit directement l'API Analytics
+de Yext, par dossier : tous les pays, France, France · parkings (France moins les bornes), France · bornes de recharge
+(dossiers `EV Stations` et `OuestEV`), Belgique, Belgique · bornes, Espagne, Canada, Suisse, Luxembourg, Andorre, Brésil.
+
+| Donnée | Métrique Yext |
+|---|---|
+| Vues Google Search / Maps | `LISTINGS_IMPRESSIONS` par `APP` |
+| Actions par éditeur et par type (itinéraires, clics site, appels) | `TOTAL_LISTINGS_ACTIONS` par `SITES` et `ACTION` (715 = Google, 950 = Apple) |
+| Vues Apple Plans | `APPLE_PLACE_CARD_VIEWS` |
+| Vues Bing | `BING_SEARCHES` (hebdomadaire, regroupé par mois) |
+
+Fenêtre : les 13 derniers mois complets, comparés au même mois N-1. Les réponses sont gardées 12 h dans
+`data/yext/cache/` ; « Actualiser » relit l'API. Les dossiers sont filtrés avec `folderIds` (identifiants externes,
+sous-dossiers inclus).

@@ -200,3 +200,37 @@ describe("maillage", () => {
     expect(pr.get("https://s.fr/c")).toBe(0);
   });
 });
+
+import { fenetre, soustraire, YextClient } from "../src/dashboard/yext.js";
+
+describe("Yext (visibilité locale)", () => {
+  it("prend les 13 derniers mois complets", () => {
+    expect(fenetre(new Date("2026-11-12T10:00:00Z"))).toEqual({ debut: "2025-10", fin: "2026-10" });
+  });
+
+  it("répartit vues Search / Maps et actions par éditeur, puis soustrait un dossier", async () => {
+    const reponses: Record<string, Array<Record<string, unknown>>> = {
+      LISTINGS_IMPRESSIONS: [{ MONTHS: "2026-10-01", APP: "Maps", LISTINGS_IMPRESSIONS: 100 }, { MONTHS: "2026-10-01", APP: "Search", LISTINGS_IMPRESSIONS: 20 }],
+      TOTAL_LISTINGS_ACTIONS: [
+        { MONTHS: "2026-10-01", SITES: "715", ACTION: "Driving Directions", TOTAL_LISTINGS_ACTIONS: 50 },
+        { MONTHS: "2026-10-01", SITES: "715", ACTION: "Website", TOTAL_LISTINGS_ACTIONS: 10 },
+        { MONTHS: "2026-10-01", SITES: "950", ACTION: "Driving directions", TOTAL_LISTINGS_ACTIONS: 7 },
+        { MONTHS: "2026-10-01", SITES: "638", ACTION: "Tap to Call", TOTAL_LISTINGS_ACTIONS: 1 },
+      ],
+      APPLE_PLACE_CARD_VIEWS: [{ MONTHS: "2026-10-01", APPLE_PLACE_CARD_VIEWS: 30 }],
+      BING_SEARCHES: [{ WEEKS: "2026-10-05", "Bing Searches": 4 }, { WEEKS: "2026-10-12", "Bing Searches": 6 }],
+    };
+    const fetchImpl = (async (_u: string | URL, init?: RequestInit) => {
+      const m = JSON.parse(String(init?.body)).metrics[0] as string;
+      return new Response(JSON.stringify({ response: { data: reponses[m] ?? [] } }), { status: 200 });
+    }) as typeof fetch;
+    const s = await new YextClient("k", "https://x", fetchImpl).series(["fR"], "2026-10", "2026-10");
+    expect(s[0]).toMatchObject({ googleMaps: 100, googleSearch: 20, appleVues: 30, bingVues: 10 });
+    expect(s[0]!.google).toMatchObject({ itineraires: 50, siteWeb: 10, total: 60 });
+    expect(s[0]!.apple.itineraires).toBe(7);
+    expect(s[0]!.autresEditeurs.appels).toBe(1);
+    const d = soustraire(s, s.map((x) => ({ ...x, googleMaps: 40, google: { ...x.google, itineraires: 20 } })));
+    expect(d[0]!.googleMaps).toBe(60);
+    expect(d[0]!.google.itineraires).toBe(30);
+  });
+});

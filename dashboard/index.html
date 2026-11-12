@@ -78,7 +78,7 @@
   .two { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); }
   .three { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .row { display: flex; flex-wrap: wrap; gap: 18px; }
-  .row > * { flex: 1 1 460px; }
+  .row > * { flex: 1 1 460px; min-width: 0; }
   .kpi { padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 8px; }
   .kpi .label { font: 600 11px Inter, sans-serif; text-transform: uppercase; letter-spacing: .09em; color: var(--lbl); display: flex; justify-content: space-between; gap: 8px; }
   .kpi .label span { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--faint); }
@@ -414,8 +414,8 @@ const AIDE = {
   visi: ["L'indicateur officiel (KR) du SEO : à quel point INDIGO Neo est visible dans Google sur une liste fixe de recherches importantes (parking + ville, gare, aéroport…), qu'il y ait un clic ou non.",
     "100 % = premier sur toutes les recherches de la liste ; 0 % = absent. Une recherche importante compte plus qu'une petite. On compare chaque mois à la baseline (le point de départ) et à la cible de fin d'année.",
     "Regarder les typologies qui baissent (tableau « Par typologie ») et les requêtes au score faible : ce sont les pages à retravailler."],
-  local: ["La visibilité des fiches Google des parkings (Google Business Profile, gérées dans Yext) et le lien entre chaque fiche et sa page sur le site.",
-    "Les chiffres Yext décrivent les fiches (vues, demandes d'itinéraire, appels, clics vers le site). Les chiffres Search Console « local » ne comptent que les visites arrivées par le bouton « Site web » d'une fiche (toute URL avec un paramètre utm_), page par page. La « part locale » dit quelle part du trafic d'une page vient de sa fiche.",
+  local: ["La visibilité des fiches des parkings (Google, Apple Plans, Bing et annuaires, gérées dans Yext) : combien de fois elles sont vues et ce que les gens y font.",
+    "Toutes les données viennent de l'API Yext ; choisis un pays ou un dossier (France, bornes de recharge France, Belgique…) en haut. « Vues Maps » et « Vues Search » = affichages de la fiche dans Google Maps et dans la recherche Google ; « Itinéraires » = demandes de trajet vers le parking ; « Clics site web » = clics sur le bouton qui mène au site ; « Appels » = appels lancés depuis la fiche. Le tableau « Par éditeur » compare chaque plateforme au même mois de l'an dernier. Le bloc Scout montre la place des parkings dans Google Maps et dans les réponses IA face aux concurrents (rang 1 = premier ; une fiche absente compte 41). Le trafic Search Console des fiches est en complément, en bas.",
     "Corriger les fiches en anomalie, créer une page pour les fiches qui n'en ont pas, et vérifier les pages parking qui reçoivent du trafic organique mais aucun trafic de fiche (fiche absente ou mal reliée)."],
   mots: ["Toutes les recherches pour lesquelles le site apparaît dans Google (ou Bing), regroupées et comparées à la période précédente.",
     "Top 3 = les 3 premiers résultats (la majorité des clics), 4-10 = première page, 11-20 = deuxième page. « Marque » = recherches contenant Indigo : elles ne mesurent pas le travail SEO. Les clusters regroupent les recherches par sujet.",
@@ -620,22 +620,90 @@ const vues = {
     const vue = f("localVue", "pages");
     const rech = f("localRech", "").toLowerCase();
     const lignes = rech ? d.lignes.filter((l) => l.url.toLowerCase().includes(rech)) : d.lignes;
-    return `
+    // --- Vue d'ensemble Yext (API Analytics) : par pays / dossier, Search vs Maps, actions par éditeur ---
+    const Y = await api(`/api/yext?segment=${encodeURIComponent(f("localSeg", "tous"))}`).catch((e) => ({ erreur: e.message }));
+    const YM = Y.mois ?? [];
+    const yd = YM.at(-1), y1 = YM.length >= 13 ? YM[YM.length - 13] : null;
+    const ev = (a, b) => (b ? (a - b) / b : null);
+    const editeurs = (m) => m ? [
+      { nom: "Google", vuesSearch: m.googleSearch, vuesMaps: m.googleMaps, vues: m.googleSearch + m.googleMaps, ...m.google },
+      { nom: "Apple Plans", vues: m.appleVues, ...m.apple },
+      { nom: "Bing", vues: m.bingVues, itineraires: 0, siteWeb: 0, appels: 0, total: 0 },
+      { nom: "Autres annuaires", vues: null, ...m.autresEditeurs },
+    ] : [];
+    const Ed = editeurs(yd), Ed1 = editeurs(y1);
+    const tot = (l, k) => l.reduce((s, e) => s + (e[k] ?? 0), 0);
+    const cel = (i, k) => { const a = Ed[i]?.[k], b = Ed1[i]?.[k]; return a == null ? '<span class="faint">—</span>' : `<b class="mono">${fmt(a)}</b> ${b ? varHtml(ev(a, b)) : '<span class="faint" style="font-size:11px">—</span>'}`; };
+    const mY = yd ? nomMois(yd.mois) : "", mY1 = y1 ? nomMois(y1.mois) : "";
+    const serie = (fn) => YM.map((m) => ({ date: m.mois, v: fn(m) }));
+    const blocYext = Y.erreur ? `<div class="err">${esc(Y.erreur)}</div>` : !yd ? `<div class="note">Pas de données Yext pour ce dossier.</div>` : `
+      <section class="panel" style="padding:14px 18px"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="lbl">Pays / dossier Yext</span>
+        ${segment("localSeg", Y.segments.map((s) => [s.id, s.nom]), "tous")}</div></section>
       <section class="grid kpis">
-        ${kpi("Clics depuis les fiches", fmtK(t.clicks), varHtml(t.varClicks), `${fmt(t.pages)} pages reçoivent du trafic de fiche · Search Console`, { src: "GSC · URL utm_" })}
-        ${kpi("Impressions des liens de fiche", fmtK(t.impressions), varHtml(t.varImpressions), `position moyenne ${pos(t.position)} · CTR ${pct(t.ctr, 1)}`, { src: "GSC" })}
-        ${v ? kpi("Visibilité locale (panier KR)", pct(v.part, 1), "", `même barème que le KR, sur les liens des fiches · Top 3 : ${fmt(v.top3)}`, { src: "KR local" }) : kpi("Visibilité locale", "—", "", "crée d'abord le panier dans « KR Visibilité »")}
-        ${der ? kpi(`Vues des fiches (${nomMois(der.mois)})`, fmtK(der.impressions), n1 ? varHtml((der.impressions - n1.impressions) / n1.impressions) : "", n1 ? `vs ${nomMois(n1.mois)} : ${fmtK(n1.impressions)}` : "", { src: "Yext", spark: M.map((m) => m.impressions), couleur: "#FFC857" }) : ""}
-        ${der ? kpi(`Clics vers le site (${nomMois(der.mois)})`, fmtK(der.siteWeb), n1 ? varHtml((der.siteWeb - n1.siteWeb) / n1.siteWeb) : "", `itinéraires ${fmtK(der.itineraires)} · appels ${fmtK(der.appels)}`, { src: "Yext", spark: M.map((m) => m.siteWeb), couleur: "var(--link)" }) : ""}
-        ${y ? kpi("Fiches Google", fmt(y.google.enLigne), `<span class="chip ${y.google.enAnomalie ? "bad" : "good"}">${fmt(y.google.enAnomalie)} en anomalie</span>`, `${fmt(y.fiches.actives)} parkings actifs · ${fmt(y.fiches.activesSansPage)} sans page · ${fmt(y.fiches.activesSansGooglePlaceId)} sans Google Place ID`, { src: "Yext" }) : ""}
+        ${kpi(`Vues Google Maps (${mY})`, fmtK(yd.googleMaps), y1 ? varHtml(ev(yd.googleMaps, y1.googleMaps)) : "", `vs ${mY1} : ${fmtK(y1?.googleMaps)}`, { src: "Yext", spark: YM.map((m) => m.googleMaps), couleur: "#FFC857" })}
+        ${kpi(`Vues Google Search (${mY})`, fmtK(yd.googleSearch), y1 ? varHtml(ev(yd.googleSearch, y1.googleSearch)) : "", `vs ${mY1} : ${fmtK(y1?.googleSearch)} · ${pct(yd.googleMaps + yd.googleSearch ? yd.googleSearch / (yd.googleMaps + yd.googleSearch) : 0, 0)} des vues Google`, { src: "Yext", spark: YM.map((m) => m.googleSearch), couleur: "var(--link)" })}
+        ${kpi(`Itinéraires (${mY})`, fmtK(tot(Ed, "itineraires")), y1 ? varHtml(ev(tot(Ed, "itineraires"), tot(Ed1, "itineraires"))) : "", `Google ${fmtK(yd.google.itineraires)} · Apple ${fmtK(yd.apple.itineraires)}`, { src: "Yext", spark: YM.map((m) => m.google.itineraires + m.apple.itineraires), couleur: "var(--accent)" })}
+        ${kpi(`Clics vers le site (${mY})`, fmtK(tot(Ed, "siteWeb")), y1 ? varHtml(ev(tot(Ed, "siteWeb"), tot(Ed1, "siteWeb"))) : "", `Google ${fmtK(yd.google.siteWeb)} · Apple ${fmtK(yd.apple.siteWeb)}`, { src: "Yext", spark: YM.map((m) => m.google.siteWeb + m.apple.siteWeb), couleur: "var(--link)" })}
+        ${kpi(`Appels (${mY})`, fmtK(tot(Ed, "appels")), y1 ? varHtml(ev(tot(Ed, "appels"), tot(Ed1, "appels"))) : "", `vs ${mY1} : ${fmtK(tot(Ed1, "appels"))}`, { src: "Yext", spark: YM.map((m) => m.google.appels + m.apple.appels), couleur: "#FF9F85" })}
+        ${kpi(`Vues Apple Plans (${mY})`, fmtK(yd.appleVues), y1 ? varHtml(ev(yd.appleVues, y1.appleVues)) : "", `vs ${mY1} : ${y1 ? fmtK(y1.appleVues) : "—"}`, { src: "Yext", spark: YM.map((m) => m.appleVues), couleur: "#C9D2E6" })}
+        ${kpi(`Vues Bing (${mY})`, fmtK(yd.bingVues), y1?.bingVues ? varHtml(ev(yd.bingVues, y1.bingVues)) : "", y1?.bingVues ? `vs ${mY1} : ${fmtK(y1.bingVues)}` : "pas de données Bing il y a un an", { src: "Yext", spark: YM.map((m) => m.bingVues), couleur: "var(--series2)" })}
       </section>
-      ${!y ? `<div class="note">Pas encore de données Yext pour ce site : dans Claude Code, demande « mets à jour les données Yext du dashboard » (MCP Yext).</div>` : `<p class="faint" style="margin:0">Données Yext du ${new Date(y.date).toLocaleDateString("fr-FR")} · ${esc(y.source)}${y.note ? " · " + esc(y.note) : ""}</p>`}
-      ${M.length ? `<div class="row">
-        <section class="panel"><h2>Fiches Google : vues par mois</h2><p class="sub">Nombre d'affichages des fiches dans Google Search et Maps (Yext)</p>
-          ${ligne([{ nom: "Vues des fiches", couleur: "#FFC857", points: M.map((m) => ({ date: m.mois, v: m.impressions })) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
-        <section class="panel"><h2>Actions sur les fiches</h2><p class="sub">Itinéraires, clics vers le site et appels par mois (Yext)</p>
-          ${ligne([{ nom: "Itinéraires", couleur: "var(--accent)", points: M.map((m) => ({ date: m.mois, v: m.itineraires })) }, { nom: "Clics site", couleur: "var(--link)", points: M.map((m) => ({ date: m.mois, v: m.siteWeb })) }, { nom: "Appels", couleur: "#FF9F85", points: M.map((m) => ({ date: m.mois, v: m.appels })) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
-      </div>` : ""}
+      <section class="panel"><h2>Par éditeur <small>${esc(Y.segment.nom)} · ${mY} vs ${mY1}</small></h2><p class="sub">Où les fiches sont vues et ce que les gens y font</p>
+        <div class="scroll"><table><thead><tr><th>Éditeur</th><th class="n">Vues Search</th><th class="n">Vues Maps</th><th class="n">Vues totales</th><th class="n">Itinéraires</th><th class="n">Clics site web</th><th class="n">Appels</th><th class="n">Actions totales</th><th class="n">Part des actions</th></tr></thead><tbody>
+          ${Ed.map((e, i) => `<tr><td><b>${esc(e.nom)}</b></td><td class="n">${e.vuesSearch == null ? '<span class="faint">—</span>' : cel(i, "vuesSearch")}</td><td class="n">${e.vuesMaps == null ? '<span class="faint">—</span>' : cel(i, "vuesMaps")}</td><td class="n">${cel(i, "vues")}</td><td class="n">${cel(i, "itineraires")}</td><td class="n">${cel(i, "siteWeb")}</td><td class="n">${cel(i, "appels")}</td><td class="n">${cel(i, "total")}</td><td class="n mono">${pct(tot(Ed, "total") ? e.total / tot(Ed, "total") : 0, 1)}</td></tr>`).join("")}
+          <tr><td class="faint">Total</td><td class="n mono">${fmt(yd.googleSearch)}</td><td class="n mono">${fmt(yd.googleMaps)}</td><td class="n mono">${fmt(tot(Ed, "vues"))}</td><td class="n mono">${fmt(tot(Ed, "itineraires"))}</td><td class="n mono">${fmt(tot(Ed, "siteWeb"))}</td><td class="n mono">${fmt(tot(Ed, "appels"))}</td><td class="n mono">${fmt(tot(Ed, "total"))}</td><td></td></tr>
+        </tbody></table></div>
+        <p class="faint" style="font-size:12px;margin:10px 0 0">Google : vues de la fiche dans Search et dans Maps. Apple : vues de la fiche Plans. Bing : apparitions dans les recherches (données hebdomadaires regroupées par mois ; Bing ne remonte pas d'actions). « Autres annuaires » : Cylex, Opendi, HotFrog… (vues non disponibles par dossier). « Actions totales » inclut aussi les partages, photos et e-mails.</p></section>
+      <div class="row">
+        <section class="panel"><h2>Google : vues Search et Maps par mois</h2><p class="sub">${esc(Y.segment.nom)} · affichages de la fiche dans Google Maps et dans la recherche Google</p>
+          ${ligne([{ nom: "Maps", couleur: "#FFC857", points: serie((m) => m.googleMaps) }, { nom: "Search", couleur: "var(--link)", points: serie((m) => m.googleSearch) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+        <section class="panel"><h2>Itinéraires par mois</h2><p class="sub">Demandes de trajet vers le parking, par éditeur</p>
+          ${ligne([{ nom: "Google", couleur: "var(--accent)", points: serie((m) => m.google.itineraires) }, { nom: "Apple Plans", couleur: "#C9D2E6", points: serie((m) => m.apple.itineraires) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+      </div>
+      <div class="row">
+        <section class="panel"><h2>Clics vers le site par mois</h2><p class="sub">Clics sur le bouton « Site web » des fiches, par éditeur</p>
+          ${ligne([{ nom: "Google", couleur: "var(--link)", points: serie((m) => m.google.siteWeb) }, { nom: "Apple Plans", couleur: "#C9D2E6", points: serie((m) => m.apple.siteWeb) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+        <section class="panel"><h2>Appels et vues Apple / Bing par mois</h2><p class="sub">Appels depuis les fiches (Google) et vues des fiches hors Google</p>
+          ${ligne([{ nom: "Appels Google", couleur: "#FF9F85", points: serie((m) => m.google.appels) }, { nom: "Vues Apple", couleur: "#C9D2E6", points: serie((m) => m.appleVues) }, { nom: "Vues Bing", couleur: "var(--series2)", points: serie((m) => m.bingVues) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+      </div>
+      ${y ? `<section class="grid kpis">${kpi("Fiches Google (compte)", fmt(y.google.enLigne), `<span class="chip ${y.google.enAnomalie ? "bad" : "good"}">${fmt(y.google.enAnomalie)} en anomalie</span>`, `${fmt(y.fiches.actives)} parkings actifs · ${fmt(y.fiches.activesSansPage)} sans page · ${fmt(y.fiches.activesSansGooglePlaceId)} sans Google Place ID`, { src: "Yext" })}</section>` : ""}
+      <p class="faint" style="margin:0">API Analytics Yext · ${Y.fenetre.debut} → ${Y.fenetre.fin} (mois complets) · cache 12 h, « Actualiser » relit l'API</p>`;
+    return `
+      ${blocYext}
+      ${y?.scout ? (() => {
+        const sc = y.scout, mq = sc.marque;
+        const tv = sc.tauxVictoire.filter((x) => x.fiches >= 500).sort((a, b) => a.mois.localeCompare(b.mois));
+        const t0 = tv[0], t1 = tv.at(-1);
+        return `<section class="panel"><h2>Classement local face aux concurrents <small>Yext Scout · semaine du ${new Date(sc.semaine).toLocaleDateString("fr-FR")}</small></h2>
+          <p class="sub">Scout simule chaque semaine des recherches locales (« parking », « borne de recharge »…) autour de chaque fiche et relève la place d'INDIGO dans Google Maps et dans les réponses IA.</p>
+          <div class="grid kpis">
+            ${kpi("Rang Google Maps moyen", pos(mq.rangAvecAbsents), "", `${pos(mq.rangSiPresent)} quand la fiche apparaît · une absence compte 41`)}
+            ${kpi("Présence dans les recherches", pct(mq.apparitions / mq.recherches, 0), "", `${fmt(mq.apparitions)} apparitions sur ${fmt(mq.recherches)} recherches suivies`)}
+            ${t1 ? kpi("Taux de victoire Google", pct(t1.serp, 0), t0 ? varHtml((t1.serp - t0.serp) / t0.serp) : "", `face aux concurrents · ${t0 ? "vs " + nomMois(t0.mois) + " : " + pct(t0.serp, 0) : ""}`) : ""}
+            ${t1 ? kpi("Taux de victoire IA", pct(t1.ia, 0), t0 ? varHtml((t1.ia - t0.ia) / t0.ia) : "", `ChatGPT, Gemini, AI Overviews… ${t0 ? "· " + nomMois(t0.mois) + " : " + pct(t0.ia, 0) : ""}`) : ""}
+            ${kpi("Note Google moyenne", mq.note.toLocaleString("fr-FR") + " / 5", "", `fiches complètes à ${pct(mq.completude, 0)}`)}
+          </div>
+          <div class="row" style="margin-top:14px">
+            <div><span class="lbl">Taux de victoire par mois</span>${ligne([{ nom: "Google (local)", couleur: "var(--accent)", points: tv.map((x) => ({ date: x.mois, v: x.serp * 100 })) }, { nom: "Réponses IA", couleur: "var(--link)", points: tv.map((x) => ({ date: x.mois, v: x.ia == null ? null : x.ia * 100 })) }], { cle: "v", h: 190, etiquette: (p) => nomMois(p.date), format: (x) => Math.round(x) + " %", maxFixe: 100 })}
+              <p class="faint" style="font-size:12px;margin:4px 0 0">Part des recherches où INDIGO est devant ses concurrents. Mois avec moins de 500 fiches scannées masqués (non comparables).</p></div>
+            <div><span class="lbl">Fiches absentes des résultats locaux</span><p class="faint" style="font-size:12px;margin:4px 0 8px">Parkings non classés sur leur mot-clé principal, rapprochés de leur page par l'URL.</p>
+              ${tableau("absents", [
+                { k: "nom", label: "Fiche", f: (a) => `<b>${esc(a.nom)}</b><div class="faint" style="font-size:12px">${esc(a.adresse)} · ${a.note.toLocaleString("fr-FR")}★ (${fmt(a.avis)} avis)</div>${a.url ? lien(a.url) : '<span class="down" style="font-size:12px">pas de page de destination</span>'}${a.alerte ? `<div class="down" style="font-size:12px">⚠ ${esc(a.alerte)}</div>` : ""}` },
+                { k: "clicsOrganique", label: "Clics orga.", n: 1, f: (a) => a.clicsOrganique == null ? "—" : fmt(a.clicsOrganique) },
+                { k: "clicsFiche", label: "Clics fiche", n: 1, f: (a) => a.clicsFiche == null ? "—" : fmt(a.clicsFiche) },
+                { k: "liensEntrants", label: "Liens ent.", n: 1, f: (a) => a.liensEntrants == null ? "—" : fmt(a.liensEntrants) },
+              ], sc.parkingsAbsents, { max: 50 })}</div>
+          </div>
+          <p class="faint" style="font-size:12px;margin:10px 0 0">${esc(sc.remarques)}</p></section>`;
+      })() : ""}
+      <details class="panel"${f("localComplement", false) ? " open" : ""} ontoggle="state.filtres.localComplement = this.open">
+        <summary><h2 style="display:inline">Complément : trafic des fiches vers le site (Search Console)</h2></summary>
+        <p class="sub" style="margin-top:8px">Les clics « Site web » des fiches arrivent sur des URL avec un paramètre utm_ : Search Console les mesure page par page. Utile pour relier une fiche à sa page ; la visibilité locale, elle, se lit dans les chiffres Yext ci-dessus.</p>
+        <div class="grid kpis" style="margin-bottom:14px">
+          ${kpi("Clics depuis les fiches", fmtK(t.clicks), varHtml(t.varClicks), `${fmt(t.pages)} pages · Search Console`, { src: "GSC" })}
+          ${kpi("Impressions des liens de fiche", fmtK(t.impressions), varHtml(t.varImpressions), `position moyenne ${pos(t.position)}`, { src: "GSC" })}
+          ${v ? kpi("Score du panier KR (liens de fiche)", pct(v.part, 1), "", `Top 3 : ${fmt(v.top3)}`, { src: "GSC" }) : ""}
+        </div>
       ${v ? `<section class="panel"><h2>Visibilité locale par typologie</h2><p class="sub">Score du panier KR calculé sur la position des liens de fiche (Local Pack, fiche d'établissement) au lieu des résultats classiques</p>
         ${barres(v.parCategorie.map((c) => ({ label: c.nom.replace(/^Parking \+ /, ""), valeur: c.part * 100, c })), { couleur: () => "#FFC857", droite: (x) => `${pct(x.c.part, 1)} · ${x.c.requetes} req.` })}</section>` : ""}
       <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -657,7 +725,7 @@ const vues = {
           ], d.requetes)}`
         : vue === "sansfiche" ? `<p class="sub">Pages parking qui font au moins 20 clics organiques mais ne reçoivent aucun clic depuis une fiche Google : fiche manquante, fermée, ou dont le lien « site web » ne pointe pas vers cette URL.</p>${tableau("sansfiche", [{ k: "url", label: "Page", f: (l) => lien(l.url) }, { k: "clicks", label: "Clics organiques", n: 1, f: (l) => fmt(l.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (l) => fmt(l.impressions) }], d.pagesOrganiquesSansFiche, { vide: "Toutes les pages parking à trafic reçoivent aussi du trafic de fiche." })}`
         : `<p class="sub">Fiches Yext actives sans page de destination : le bouton « site web » de la fiche ne mène pas vers la page du parking (premier lot lu, hors bornes de recharge).</p>${tableau("sanspage", [{ k: "nom", label: "Fiche" }, { k: "ville", label: "Ville" }, { k: "id", label: "ID Yext", f: (x) => `<span class="mono faint">${esc(x.id)}</span>` }], y?.fichesSansPage ?? [])}`}
-      </section>`;
+      </section></details>`;
   },
 
   async maillage() {

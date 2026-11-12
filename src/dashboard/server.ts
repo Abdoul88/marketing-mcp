@@ -25,6 +25,7 @@ import {
 import { analyserPages, type ResultatPsi, type Strategie } from "./pagespeed.js";
 import { backlog, fusionnerPages } from "./pages.js";
 import { BAREME, CATEGORIES_DEFAUT, mesurer, moisEntre, proposerPanier, regexPanier, type Mesure, type Panier } from "./visibilite.js";
+import { fenetre, SEGMENTS, soustraire, YextClient, type Segment } from "./yext.js";
 
 loadEnvFile();
 const PORT = Number(process.env.DASHBOARD_PORT ?? 4321);
@@ -38,6 +39,17 @@ const adsConfig = readGoogleAdsConfig();
 const ads = auth ? new GoogleAdsClient(auth, adsConfig) : undefined;
 const bingConfig = readBingConfig();
 const bing = bingConfig ? new BingWebmasterClient(bingConfig) : undefined;
+const yext = process.env.YEXT_API_KEY ? new YextClient(process.env.YEXT_API_KEY, process.env.YEXT_API_BASE || "https://api.eu.yext.com") : undefined;
+
+/** Cache sur disque (12 h) : les mois Yext complets bougent peu et chaque rapport prend plusieurs secondes. */
+async function cachedLong<T>(cle: string, frais: boolean, f: () => Promise<T>): Promise<T> {
+  const fichier = join(PROJECT_ROOT, "data", "yext", "cache", `${cle.replace(/[^\w.-]+/g, "_")}.json`);
+  if (!frais && existsSync(fichier) && Date.now() - statSync(fichier).mtimeMs < 12 * 3600_000) return JSON.parse(readFileSync(fichier, "utf8")) as T;
+  const v = await f();
+  mkdirSync(join(PROJECT_ROOT, "data", "yext", "cache"), { recursive: true });
+  writeFileSync(fichier, JSON.stringify(v));
+  return v;
+}
 
 // --- cache mémoire (15 min) pour ménager les quotas des API ---
 const cache = new Map<string, { t: number; v: unknown }>();
@@ -441,6 +453,17 @@ const routes: Record<string, (p: Params, frais: boolean) => Promise<unknown>> = 
     };
   },
 
+  // --- Visibilité locale : API Analytics Yext, par pays / dossier ---
+  async "GET /api/yext"(p, frais) {
+    if (!yext) throw new Error("Ajoute YEXT_API_KEY (clé API Yext en lecture seule) dans .env pour la visibilité locale par pays.");
+    const seg = SEGMENTS.find((s) => s.id === (p.get("segment") ?? "tous")) ?? SEGMENTS[0]!;
+    const w = fenetre();
+    const lire = (s: Segment) => cachedLong(`yext:${s.id}:${w.fin}`, frais, () => yext!.series(s.dossiers, w.debut, w.fin));
+    let mois = await lire(seg);
+    if (seg.moins) mois = soustraire(mois, await lire(SEGMENTS.find((s) => s.id === seg.moins)!));
+    return { segment: seg, segments: SEGMENTS.map(({ id, nom }) => ({ id, nom })), fenetre: w, mois };
+  },
+
   // --- Visibilité locale : fiches Google Business Profile (Yext) rapprochées des pages par URL ---
   async "GET /api/local"(p, frais) {
     const site = p.get("site")!;
@@ -487,7 +510,19 @@ const routes: Record<string, (p: Params, frais: boolean) => Promise<unknown>> = 
     const panier = lirePanier(site);
     const qLoc = [...new Map(locReq.map((r) => [r.keys![0]!, r])).values()].map((r) => ({ ...r, keys: [r.keys![0]!] }));
     const visibiliteLocale = panier ? mesurer(panier, `${per.debut} → ${per.fin}`, qLoc) : null;
-    const pagesOrganiquesSansFiche = [...org.entries()].filter(([u, o]) => /\/parkings\/\d+/.test(u) && !cur.has(u) && o.clicks >= 20).sort((a, b) => b[1].clicks - a[1].clicks).slice(0, 200).map(([url, o]) => ({ url, clicks: o.clicks, impressions: o.impressions }));
+    // Fiches absentes des résultats locaux (Yext Scout) : rapprochées de leur page par l'URL de destination.
+    const scout = (yext as { scout?: { parkingsAbsents?: Array<{ url: string | null }> } } | null)?.scout;
+    if (scout?.parkingsAbsents) {
+      for (const a of scout.parkingsAbsents as Array<Record<string, unknown>>) {
+        // Une URL avec paramètres (page de recherche) ne correspond à aucune page parking : pas de rapprochement.
+        const u = a.url && !String(a.url).includes("?") ? canon(String(a.url)) : null;
+        a.clicsOrganique = u ? (org.get(u)?.clicks ?? 0) : null;
+        a.positionOrganique = u ? (org.get(u)?.position ?? null) : null;
+        a.clicsFiche = u ? (cur.get(u)?.clicks ?? 0) : null;
+        a.liensEntrants = u ? (parCrawl.get(u)?.liensEntrants ?? null) : null;
+      }
+    }
+    const pagesOrganiquesSansFiche =[...org.entries()].filter(([u, o]) => /\/parkings\/\d+/.test(u) && !cur.has(u) && o.clicks >= 20).sort((a, b) => b[1].clicks - a[1].clicks).slice(0, 200).map(([url, o]) => ({ url, clicks: o.clicks, impressions: o.impressions }));
     return {
       periode: per, yext,
       totaux: { clicks: tc.clicks, impressions: tc.impressions, ctr: tc.ctr, position: tc.position, varClicks: variation(tc.clicks, tp.clicks), varImpressions: variation(tc.impressions, tp.impressions), pages: cur.size },
