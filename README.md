@@ -41,6 +41,28 @@ Détail de chaque outil, paramètres et sorties : **[docs/outils.md](docs/outils
 
 ---
 
+## Dashboard SEO et plugin `seo-pilote`
+
+```powershell
+npm.cmd install
+npm.cmd run dashboard     # http://127.0.0.1:4321
+```
+
+Un dashboard local et multi-sites (Performances, Opportunités, Discover, Technique, Concurrents,
+Contenu & social, SEO × SEA) bâti sur les mêmes API gratuites, plus un plugin Claude Code de six skills
+(opportunités, concurrents avec Firecrawl, technique, maillage, article complet avec visuel aux couleurs
+du site, publication Facebook et vérification Discover). Chaque ligne du dashboard fournit la commande
+à coller dans Claude Code.
+
+```
+/plugin marketplace add C:\Users\adiallo3\marketing-mcp
+/plugin install seo-pilote@marketing-mcp
+```
+
+Mode d'emploi complet : **[docs/dashboard.md](docs/dashboard.md)**.
+
+---
+
 ## Comment ça marche
 
 ```mermaid
@@ -155,6 +177,8 @@ src/
   config.ts        lecture de .env, chemins du projet, normalisation des IDs Google Ads
   google-auth.ts   OAuth Google : URL d'autorisation (PKCE), refresh token, jeton d'accès
   auth-google.ts   commande « auth:google » (serveur local de rappel sur 127.0.0.1)
+  dashboard/       dashboard SEO local (server.ts, analyse.ts, audit.ts) ; page dans dashboard/index.html
+  scripts/         charte, visuel, wordpress, facebook, discover, indexnow, suivi
   gsc.ts           client Search Console
   google-ads.ts    client Google Ads (GAQL, pagination, erreurs) et rapport de performances
   bing.ts          client Bing Webmaster (clé API, dates WCF, cumul hebdomadaire)

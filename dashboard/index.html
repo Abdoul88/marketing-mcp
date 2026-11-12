@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilote SEO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080C17; --panel: #0F1526; --panel2: #0B1120; --hover: #121A2F; --line: #1D2742; --line2: #151E36; --line3: #26324F;
+    --ink: #E9EEF8; --muted: #97A3BC; --faint: #6F7C99; --lbl: #8D99B4;
+    --accent: #B8F35A; --accent-ink: #0A0F1C; --link: #5CD3F5; --good: #B8F35A; --bad: #FF7A59; --warn: #FFC857; --series2: #4A5878;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font: 400 14px/1.45 Inter, system-ui, "Segoe UI", sans-serif; }
+  a { color: var(--link); } a:hover { color: #A6E8FA; }
+  .h { font-family: "Space Grotesk", Inter, sans-serif; letter-spacing: -0.015em; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-feature-settings: "tnum"; }
+  .muted { color: var(--muted); } .faint { color: var(--faint); }
+  .lbl { font: 600 11px Inter, sans-serif; text-transform: uppercase; letter-spacing: .09em; color: var(--lbl); }
+  .up { color: var(--good); } .down { color: var(--bad); }
+
+  /* --- structure --- */
+  .app { display: flex; min-height: 100vh; }
+  aside { flex: 0 0 264px; border-right: 1px solid #161F38; padding: 20px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--bg); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .brand .logo { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: inline-flex; align-items: center; justify-content: center; color: var(--accent-ink); }
+  .nav { appearance: none; border: 0; background: transparent; color: #AEB8CE; border-radius: 10px; padding: 0 12px; min-height: 40px; font: 500 14px Inter, sans-serif; cursor: pointer; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; transition: background .15s, color .15s; }
+  .nav:hover { background: #141C31; color: var(--ink); }
+  .nav.on { background: #18223B; color: #fff; box-shadow: inset 2px 0 0 var(--accent); }
+  .nav .ct { margin-left: auto; font: 600 11px "JetBrains Mono", monospace; background: #1F2A47; color: #C9D2E6; border-radius: 999px; padding: 2px 8px; }
+  .nav .ct.alert { background: #2B1712; color: #FF9F85; }
+  .ic { width: 18px; height: 18px; flex: none; }
+  .sites { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
+  .site-badge { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font: 700 11px Inter, sans-serif; color: #fff; flex: none; }
+  .site-txt { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+  .site-txt span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sep { height: 1px; background: #161F38; }
+  .main { flex: 1 1 640px; min-width: 0; display: flex; flex-direction: column; }
+  header.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 32px; border-bottom: 1px solid #161F38; background: rgba(8,12,23,.92); position: sticky; top: 0; z-index: 5; backdrop-filter: blur(8px); }
+  .crumb { display: flex; align-items: center; gap: 10px; font-size: 13px; flex-wrap: wrap; }
+  .tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  main { padding: 26px 32px 64px; display: flex; flex-direction: column; gap: 20px; max-width: 1320px; width: 100%; }
+
+  /* --- contrôles --- */
+  select, input, textarea { font: 400 13px Inter, sans-serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; min-height: 38px; outline: none; }
+  select:focus, input:focus { border-color: #34426A; }
+  label.inline { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .seg { display: inline-flex; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button { appearance: none; border: 0; background: transparent; color: #AEB8CE; border-radius: 7px; padding: 0 12px; min-height: 30px; font: 500 12px Inter, sans-serif; cursor: pointer; white-space: nowrap; }
+  .seg button:hover { color: #fff; }
+  .seg button.on { background: #1F2A47; color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+  button { font: inherit; }
+  .btn, button.primary { appearance: none; border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 0 14px; min-height: 38px; font: 600 13px Inter, sans-serif; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; transition: background .15s, transform .1s; }
+  .btn:hover, button.primary:hover { background: #CBFF7A; }
+  .btn:active { transform: translateY(1px); }
+  .btn.sec, button.copy { background: #161F36; color: var(--ink); border: 1px solid var(--line3); }
+  .btn.sec:hover, button.copy:hover { background: #1C2642; border-color: #34426A; }
+  .btn.sm, button.copy { min-height: 30px; padding: 0 10px; font-size: 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  button:disabled { opacity: .5; cursor: wait; }
+  .chip, .tag { display: inline-flex; align-items: center; gap: 6px; font: 600 11px Inter, sans-serif; border-radius: 999px; padding: 3px 10px; white-space: nowrap; background: #1F2A47; color: #C9D2E6; }
+  .tag.critique, .chip.bad { background: #2B1712; color: #FF9F85; }
+  .tag.important, .chip.warn { background: #2A2410; color: var(--warn); }
+  .tag.mineur, .tag.info { background: #141C31; color: var(--muted); }
+  .chip.good { background: #18260F; color: var(--accent); }
+  .chip.link { background: #0E2433; color: var(--link); }
+
+  /* --- panneaux --- */
+  .panel, .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 20px 40px -24px rgba(0,0,0,.6); padding: 20px 22px; min-width: 0; }
+  .card h2, .panel h2 { font: 600 17px "Space Grotesk", Inter, sans-serif; letter-spacing: -0.01em; margin: 0 0 4px; }
+  .card h2 small, .panel h2 small { color: var(--faint); font: 400 12px Inter, sans-serif; margin-left: 8px; letter-spacing: 0; }
+  .sub { color: var(--faint); font-size: 12px; margin: 0 0 14px; }
+  .grid { display: grid; gap: 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .two { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); }
+  .three { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .row { display: flex; flex-wrap: wrap; gap: 18px; }
+  .row > * { flex: 1 1 460px; min-width: 0; }
+  .kpi { padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .kpi .label { font: 600 11px Inter, sans-serif; text-transform: uppercase; letter-spacing: .09em; color: var(--lbl); display: flex; justify-content: space-between; gap: 8px; }
+  .kpi .label span { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--faint); }
+  .kpi .val { font: 700 28px "Space Grotesk", Inter, sans-serif; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+  .kpi .hint { font-size: 12px; color: var(--faint); }
+  .hero { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+  .hero h1 { margin: 0; font-size: 30px; font-weight: 700; }
+  .hero p { margin: 4px 0 0; font-size: 15px; color: var(--muted); max-width: 760px; }
+
+  /* --- tableaux --- */
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th { font: 600 11px Inter, sans-serif; text-transform: uppercase; letter-spacing: .07em; color: var(--lbl); text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; position: sticky; top: 0; background: var(--panel); z-index: 1; }
+  th button { appearance: none; background: none; border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; padding: 0; min-height: 26px; }
+  th button:hover { color: #fff; }
+  td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid var(--line2); vertical-align: top; }
+  tbody tr:hover, table tr:hover td { background: var(--hover); }
+  td.n, th.n { text-align: right; white-space: nowrap; }
+  .url { max-width: 440px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; color: var(--link); text-decoration: none; font-size: 13px; }
+  .url:hover { text-decoration: underline; }
+  .scroll { max-height: 620px; overflow: auto; }
+  .rowlink { appearance: none; background: none; border: 0; padding: 0; color: #fff; font: 600 13px Inter, sans-serif; cursor: pointer; text-align: left; }
+  .rowlink:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* --- éléments --- */
+  .empty { color: var(--muted); padding: 28px; text-align: center; }
+  .err { color: #FF9F85; background: #1E1210; border: 1px solid #4A2318; border-radius: 12px; padding: 12px 14px; }
+  .note { background: var(--panel2); border: 1px solid var(--line2); border-radius: 12px; padding: 12px 14px; color: var(--muted); font-size: 13px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 6px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  svg text { fill: var(--faint); font: 11px Inter, sans-serif; }
+  .bars { display: flex; flex-direction: column; gap: 10px; }
+  .bar { display: grid; grid-template-columns: 120px 1fr auto; gap: 12px; align-items: center; font-size: 13px; }
+  .bar .track { height: 10px; border-radius: 999px; background: #161F36; overflow: hidden; }
+  .bar .fill { height: 100%; border-radius: 999px; background: var(--accent); }
+  .an { width: 100%; display: flex; gap: 14px; align-items: flex-start; padding: 13px 14px; border-radius: 14px; background: var(--panel2); border: 1px solid #1A2440; }
+  .an + .an { margin-top: 8px; }
+  .an .ico { width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; flex: none; font-weight: 700; }
+  .an .t { font-weight: 600; font-size: 14px; }
+  .an .d { color: var(--muted); font-size: 13px; }
+  .tm-wrap { position: relative; width: 100%; height: 360px; }
+  .tm { position: absolute; appearance: none; cursor: pointer; text-align: left; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; color: #fff; border: 1px solid rgba(255,255,255,.06); overflow: hidden; transition: box-shadow .15s; }
+  .tm:hover { box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+  .tm.on { box-shadow: 0 0 0 2px var(--accent); }
+  .tm b { font: 600 13px Inter, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tm span { font: 500 11px "JetBrains Mono", monospace; opacity: .85; white-space: nowrap; }
+  .progress { height: 8px; border-radius: 999px; background: #161F36; overflow: hidden; margin-top: 8px; }
+  .progress div { height: 100%; background: var(--accent); transition: width .4s; }
+  .stat { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line2); font-size: 13px; }
+  .stat:last-child { border-bottom: 0; }
+  .thumb { width: 160px; border-radius: 8px; border: 1px solid var(--line); display: block; }
+  .steps { display: flex; gap: 4px; flex-wrap: wrap; }
+  .step { font-size: 11px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line3); color: var(--muted); }
+  .step.ok { border-color: var(--accent); color: var(--accent); }
+  details summary { cursor: pointer; color: var(--muted); }
+  code { background: #161F36; padding: 1px 6px; border-radius: 5px; font: 12px "JetBrains Mono", monospace; color: #C9D2E6; }
+  .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1A2340; border: 1px solid #2C3A60; color: var(--ink); padding: 10px 16px; border-radius: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+  .toast.on { opacity: 1; }
+  .drawer-bg { position: fixed; inset: 0; background: rgba(4,6,12,.55); z-index: 20; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: var(--panel); border-left: 1px solid var(--line); z-index: 21; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; animation: slidein .2s ease-out; }
+  @keyframes slidein { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .live { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  @media (max-width: 900px) {
+    .app { flex-direction: column; }
+    aside { position: static; height: auto; flex: none; border-right: 0; border-bottom: 1px solid #161F38; }
+    .sites { max-height: 160px; }
+    header.top, main { padding-left: 16px; padding-right: 16px; }
+    .two, .three { grid-template-columns: 1fr; }
+    .row > * { flex-basis: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8 M14 7h7v7"/></svg></span>
+      <span class="h" style="font-size:17px;font-weight:700">Pilote SEO</span><span class="chip" style="margin-left:auto">v2</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <span class="lbl" style="padding:0 8px">Sites</span>
+      <div class="sites" id="sites"></div>
+    </div>
+    <div class="sep"></div>
+    <nav id="tabs" aria-label="Navigation" style="display:flex;flex-direction:column;gap:2px"></nav>
+    <div class="panel" id="sources" style="margin-top:auto;padding:14px;border-radius:14px;display:flex;flex-direction:column;gap:8px;font-size:12px"></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb"><span class="faint" id="crumbSite">—</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6F7C99" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        <span style="font-weight:600" id="crumbVue">Vue d'ensemble</span><span id="status" class="faint"></span></div>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="Moteur" id="moteurs"></div>
+        <div class="seg" role="group" aria-label="Période" id="periodes"></div>
+        <label class="inline" title="Termes de marque, séparés par des virgules (le nom de domaine est utilisé par défaut)">Marque <input id="marque" placeholder="nom de domaine" style="width:170px"></label>
+        <label class="inline">Ads <select id="client"><option value="">—</option></select></label>
+        <button class="btn" id="refresh" title="Ignorer le cache et relire les API">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8 M21 3v5h-5 M21 12a9 9 0 0 1-15.5 6.2L3 16 M3 21v-5h5"/></svg>Actualiser</button>
+      </div>
+    </header>
+    <main id="main"><div class="empty">Chargement…</div></main>
+  </div>
+</div>
+<div id="drawer"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const NAV = [
+  ["cockpit", "Vue d'ensemble", "M3.5 18a9 9 0 1 1 17 0 M12 14l4.5-4.5"],
+  ["visi", "KR Visibilité", "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0"],
+  ["local", "Visibilité locale", "M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z M12 9.5m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0"],
+  ["mots", "Mots-clés", "M4 6h16 M4 12h10 M4 18h6 M17 15l3 3-3 3"],
+  ["pages", "Pages & backlog", "M9 6h11 M9 12h11 M9 18h11 M4.5 6h.01 M4.5 12h.01 M4.5 18h.01"],
+  ["maillage", "Maillage interne", "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"],
+  ["alertes", "Alertes", "M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.9 1.9 0 0 0 3.4 0"],
+  ["crawl", "Crawl", "M12 3v4 M12 17v4 M3 12h4 M17 12h4 M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0"],
+  ["vitesse", "Core Web Vitals", "M13 2L3 14h9l-1 8 10-12h-9z"],
+  ["bench", "Benchmark", "M4 20V10 M10 20V4 M16 20v-7 M22 20H2"],
+  ["perf", "Performances", "M3 3v18h18 M7 14l4-4 3 3 5-6"],
+  ["opp", "Opportunités", "M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7z"],
+  ["disc", "Discover", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M16 8l-2 6-6 2 2-6z"],
+  ["tech", "Audit technique", "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.6-.6-2.5z"],
+  ["cont", "Contenu & social", "M4 20h4L19 9l-4-4L4 16z M13 7l4 4"],
+  ["sea", "SEO × SEA", "M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"],
+];
+const PERIODES = [["7", "7 j"], ["28", "28 j"], ["90", "3 mois"], ["180", "6 mois"], ["365", "12 mois"]];
+const COULEURS = ["#2448D8", "#0E8A6A", "#C2410C", "#7C3AED", "#0891B2", "#BE185D", "#4D7C0F", "#B45309", "#475569"];
+
+const state = {
+  tab: "cockpit", jours: "28", moteur: "google", sites: [], clients: [], frais: false, filtreOpp: "tous",
+  tri: {}, filtres: {}, cluster: 0, nbAlertes: null, taches: {}, cacheApi: new Map(),
+};
+let memo = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } };
+
+// --- formats ---
+const fmt = (n) => n == null ? "—" : Number(n).toLocaleString("fr-FR");
+const fmtK = (n) => n == null ? "—" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " M" : Math.abs(n) >= 10000 ? (n / 1000).toLocaleString("fr-FR", { maximumFractionDigits: Math.abs(n) >= 100000 ? 0 : 1 }) + " k" : fmt(Math.round(n));
+const pct = (n, d = 1) => n == null ? "—" : (n * 100).toLocaleString("fr-FR", { maximumFractionDigits: d }) + " %";
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const attr = (v) => esc(JSON.stringify(v));
+const btn = (cmd, label, cls = "copy") => `<button class="${cls}" onclick="copier(${attr(cmd)})">${label}</button>`;
+const varHtml = (v, inverse = false) => v == null ? '<span class="faint">—</span>'
+  : `<span class="mono ${(v >= 0) !== inverse ? "up" : "down"}" style="font-size:12px">${v >= 0 ? "▲" : "▼"} ${pct(Math.abs(v))}</span>`;
+const deltaPos = (d) => d == null ? '<span class="faint">—</span>' : `<span class="mono ${d <= 0 ? "up" : "down"}" style="font-size:12px">${d > 0 ? "▼ " : d < 0 ? "▲ " : ""}${Math.abs(d).toLocaleString("fr-FR")}</span>`;
+const deltaNb = (d) => !d ? '<span class="faint mono" style="font-size:12px">=</span>' : `<span class="mono ${d > 0 ? "up" : "down"}" style="font-size:12px">${d > 0 ? "+" : ""}${fmt(d)}</span>`;
+const deltaPt = (d) => { const v = Math.round(d * 1000) / 10; return !v ? '<span class="faint mono" style="font-size:12px">=</span>' : `<span class="mono ${v > 0 ? "up" : "down"}" style="font-size:12px">${v > 0 ? "+" : ""}${v.toLocaleString("fr-FR")} pt</span>`; };
+const pos = (n) => n == null || n === 0 ? "—" : Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+const court = (u) => String(u).replace(/^https?:\/\/(www\.)?/, "");
+const lien = (u) => u ? `<a class="url" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(u)}">${esc(court(u))}</a>` : "";
+const ms = (v) => v == null ? "—" : v >= 1000 ? (v / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " s" : Math.round(v) + " ms";
+
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); }
+async function copier(txt) { await navigator.clipboard.writeText(txt); toast("Commande copiée : colle-la dans Claude Code"); }
+window.copier = copier;
+window.copierArticle = () => copier(`/seo-pilote:seo-article-complet ${site()} ${JSON.stringify($("#sujet").value || "sujet")}`);
+
+async function api(chemin, opts = {}) {
+  const u = new URL(chemin, location.origin);
+  if (state.frais) u.searchParams.set("rafraichir", "1");
+  const get = !opts.method || opts.method === "GET";
+  const cle = u.pathname + "?" + [...u.searchParams].filter(([k]) => k !== "rafraichir").map(([k, v]) => k + "=" + v).join("&");
+  if (get && !state.frais && state.cacheApi.has(cle)) return state.cacheApi.get(cle);
+  const r = await fetch(u, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.erreur || "Erreur " + r.status);
+  if (get) state.cacheApi.set(cle, j);
+  return j;
+}
+const site = () => state.site;
+const jours = () => state.jours;
+const marque = () => $("#marque").value.trim();
+const q = (extra = "") => `site=${encodeURIComponent(site())}&jours=${jours()}&moteur=${state.moteur}${marque() ? "&marque=" + encodeURIComponent(marque()) : ""}${extra}`;
+const qs = () => `site=${encodeURIComponent(site())}`;
+
+// --- graphiques SVG, sans bibliothèque ---
+function ligne(series, { h = 200, cle = "clicks", etiquette, format = (v) => fmtK(Math.round(v)), maxFixe } = {}) {
+  const W = 800, H = h, P = { l: 48, r: 10, t: 10, b: 22 };
+  const all = series.flatMap((s) => s.points.map((p) => p[cle]));
+  const max = maxFixe ?? Math.max(1, ...all);
+  const n = Math.max(...series.map((s) => s.points.length), 2);
+  const x = (i) => P.l + (i * (W - P.l - P.r)) / (n - 1);
+  const y = (v) => H - P.b - (v / max) * (H - P.t - P.b);
+  const ticks = [0, max / 2, max].map((v) => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="#1A2440"/><text x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${format(v)}</text>`).join("");
+  const paths = series.map((s, k) => {
+    const d = s.points.map((p, i) => p[cle] == null ? "" : `${i && s.points[i - 1][cle] != null ? "L" : "M"}${x(i).toFixed(1)},${y(p[cle]).toFixed(1)}`).join("");
+    const aire = k === 0 && s.points.length && s.points.every((p) => p[cle] != null) ? `<path d="${d}L${x(s.points.length - 1)},${H - P.b}L${x(0)},${H - P.b}Z" fill="${s.couleur}" fill-opacity=".08"/>` : "";
+    return aire + `<path d="${d}" fill="none" stroke="${s.couleur}" stroke-width="2" stroke-linejoin="round" ${s.pointille ? 'stroke-dasharray="4 4"' : ""}/>`;
+  }).join("");
+  const pts = series[0]?.points ?? [];
+  const idx = etiquette ? pts.map((_, i) => i) : [0, Math.floor(pts.length / 2), pts.length - 1];
+  const lab = pts.length ? idx.map((i) => `<text x="${x(i)}" y="${H - 4}" text-anchor="middle">${etiquette ? etiquette(pts[i]) : pts[i].date.slice(5).split("-").reverse().join("/")}</text>`).join("") : "";
+  const points = etiquette ? series.map((s) => s.points.map((p, i) => p[cle] == null ? "" : `<circle cx="${x(i)}" cy="${y(p[cle])}" r="3" fill="${s.couleur}"/>`).join("")).join("") : "";
+  const legend = `<div class="legend">${series.map((s) => `<span><i style="background:${s.couleur}"></i>${s.nom}</span>`).join("")}</div>`;
+  return legend + `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Courbe">${ticks}${paths}${points}${lab}</svg>`;
+}
+function spark(valeurs, couleur = "var(--accent)") {
+  if (!valeurs || valeurs.length < 2) return "";
+  const mn = Math.min(...valeurs), mx = Math.max(...valeurs), r = mx - mn || 1;
+  const pts = valeurs.map((v, i) => [(i / (valeurs.length - 1)) * 160, 36 - ((v - mn) / r) * 32]);
+  const l = pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join(" ");
+  return `<svg viewBox="0 0 160 40" width="100%" height="38" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,40 ${l} 160,40" fill="${couleur}" fill-opacity=".10"/><polyline points="${l}" fill="none" stroke="${couleur}" stroke-width="2" stroke-linejoin="round"/><circle cx="160" cy="${pts.at(-1)[1].toFixed(1)}" r="3" fill="${couleur}"/></svg>`;
+}
+function barres(items, { cle = "valeur", label = "label", couleur = () => "var(--accent)", droite = (x) => fmt(x[cle]) } = {}) {
+  const max = Math.max(1, ...items.map((x) => x[cle]));
+  return `<div class="bars">${items.map((x) => `<div class="bar"><span class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x[label])}</span><div class="track"><div class="fill" style="width:${(x[cle] / max) * 100}%;background:${couleur(x)}"></div></div><span class="mono" style="font-size:12px;white-space:nowrap">${droite(x)}</span></div>`).join("")}</div>`;
+}
+/** Treemap « squarified » : surface = impressions, couleur = évolution des clics. */
+function treemap(items, W, H) {
+  const total = items.reduce((s, x) => s + x.v, 0) || 1;
+  const nodes = items.map((x, i) => ({ ...x, i, a: (x.v / total) * W * H }));
+  const out = [];
+  let rect = { x: 0, y: 0, w: W, h: H }, rangee = [];
+  const pire = (r, cote) => { const s = r.reduce((a, b) => a + b.a, 0); const mx = Math.max(...r.map((n) => n.a)), mn = Math.min(...r.map((n) => n.a)); return Math.max((cote * cote * mx) / (s * s), (s * s) / (cote * cote * mn)); };
+  const poser = (r) => {
+    const s = r.reduce((a, b) => a + b.a, 0);
+    if (rect.w >= rect.h) { const w = s / rect.h; let y = rect.y; for (const n of r) { const h = n.a / w; out.push({ ...n, x: rect.x, y, w, h }); y += h; } rect = { x: rect.x + w, y: rect.y, w: rect.w - w, h: rect.h }; }
+    else { const h = s / rect.w; let x = rect.x; for (const n of r) { const w = n.a / h; out.push({ ...n, x, y: rect.y, w, h }); x += w; } rect = { x: rect.x, y: rect.y + h, w: rect.w, h: rect.h - h }; }
+  };
+  for (const n of nodes) {
+    const cote = Math.min(rect.w, rect.h);
+    if (!rangee.length || pire([...rangee, n], cote) <= pire(rangee, cote)) rangee.push(n);
+    else { poser(rangee); rangee = [n]; }
+  }
+  if (rangee.length) poser(rangee);
+  return out;
+}
+function couleurTendance(v) {
+  if (v == null) return "#1F2A47";
+  const t = Math.max(-1, Math.min(1, v / 0.3));
+  return t >= 0 ? `color-mix(in srgb, #4E7A1C ${Math.round(35 + t * 55)}%, #16203A)` : `color-mix(in srgb, #A23A22 ${Math.round(35 - t * 55)}%, #16203A)`;
+}
+function kpi(label, val, v, extra = "", opts = {}) {
+  return `<div class="panel kpi"><div class="label">${label}${opts.src ? `<span>${opts.src}</span>` : ""}</div>
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="val">${val}</span>${v ?? ""}</div>
+    ${opts.spark ? spark(opts.spark, opts.couleur) : ""}${extra ? `<span class="hint">${extra}</span>` : ""}</div>`;
+}
+function erreur(e) { return `<div class="err">${esc(e.message || e)}</div>`; }
+
+// --- tableaux triables et filtrables ---
+function tableau(id, cols, lignes, { max = 300, vide = "Aucune ligne." } = {}) {
+  const t = state.tri[id];
+  let l = [...lignes];
+  if (t) { const c = cols.find((x) => x.k === t.k); const v = c?.tri ?? ((r) => r[t.k]); l.sort((a, b) => { const x = v(a), y = v(b); return (x == null) - (y == null) || (typeof x === "string" ? String(x).localeCompare(y) : (x - y)) * t.s; }); }
+  const tete = cols.map((c) => `<th class="${c.n ? "n" : ""}">${c.k ? `<button onclick="trier('${id}','${c.k}')">${c.label}${t?.k === c.k ? (t.s > 0 ? " ↑" : " ↓") : ""}</button>` : c.label}</th>`).join("");
+  const corps = l.slice(0, max).map((r) => `<tr>${cols.map((c) => `<td class="${c.n ? "n" : ""}">${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("")}</tr>`).join("");
+  return `<div class="scroll"><table><thead><tr>${tete}</tr></thead><tbody>${corps || `<tr><td colspan="${cols.length}" class="empty">${vide}</td></tr>`}</tbody></table></div>
+    ${l.length > max ? `<p class="faint" style="margin:8px 0 0;font-size:12px">${fmt(max)} lignes affichées sur ${fmt(l.length)} — exporte en CSV pour tout voir.</p>` : ""}`;
+}
+window.trier = (id, k) => { const t = state.tri[id]; state.tri[id] = { k, s: t?.k === k ? -t.s : -1 }; render(false); };
+function filtre(id, valeur) { state.filtres[id] = valeur; render(false); }
+window.filtre = filtre;
+const f = (id, def) => state.filtres[id] ?? def;
+function recherche(id, placeholder) {
+  return `<input id="rech-${id}" type="search" placeholder="${placeholder}" value="${esc(f(id, ""))}" oninput="clearTimeout(window._r);window._r=setTimeout(()=>{state.focus='rech-${id}';filtre('${id}',this.value)},250)" style="min-width:240px">`;
+}
+function segment(id, options, def) {
+  const v = f(id, def);
+  return `<div class="seg">${options.map(([k, l]) => `<button class="${v === k ? "on" : ""}" onclick="filtre('${id}',${attr(k)})">${l}</button>`).join("")}</div>`;
+}
+function csv(nom, lignes, cols) {
+  const e = (v) => { const s = v == null ? "" : String(v); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const txt = [cols.map((c) => c[1]).join(";"), ...lignes.map((r) => cols.map((c) => e(typeof c[0] === "function" ? c[0](r) : r[c[0]])).join(";"))].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + txt], { type: "text/csv;charset=utf-8" }));
+  a.download = `${nom}-${court(site()).replace(/[^\w.-]+/g, "_")}.csv`; a.click();
+}
+window.exporter = (nom) => { const x = state.exports?.[nom]; if (x) csv(nom, x.lignes, x.cols); };
+const exportBtn = (nom, lignes, cols, label = "Exporter CSV") => { state.exports = state.exports || {}; state.exports[nom] = { lignes, cols }; return `<button class="btn sec sm" onclick="exporter('${nom}')">${label}</button>`; };
+
+// --- tâches de fond (crawl, PageSpeed) ---
+async function lancer(type, chemin) {
+  try {
+    const t = await api(chemin, { method: "POST" });
+    state.taches[type] = t; render(false); suivre(type);
+  } catch (e) { toast(e.message); }
+}
+async function suivre(type) {
+  const t = state.taches[type];
+  if (!t || t.etat !== "en_cours") return;
+  try {
+    const n = await fetch(`/api/tache?id=${t.id}`).then((r) => r.json());
+    state.taches[type] = n;
+    if (n.etat === "en_cours") { majProgres(type); setTimeout(() => suivre(type), 2000); }
+    else { toast(n.etat === "termine" ? (n.message || "Terminé") : "Erreur : " + n.message); state.cacheApi.clear(); render(); }
+  } catch { setTimeout(() => suivre(type), 4000); }
+}
+function majProgres(type) {
+  const t = state.taches[type], el = document.getElementById("prog-" + type);
+  if (el && t) el.innerHTML = progresHtml(t);
+}
+function progresHtml(t) {
+  if (!t) return "";
+  const p = t.total ? Math.min(100, (t.fait / t.total) * 100) : 5;
+  return t.etat === "en_cours" ? `<div class="note"><span class="live" style="color:var(--accent)">●</span> En cours : ${fmt(t.fait)} / ${t.total ? fmt(t.total) : "…"}<div class="progress"><div style="width:${p}%"></div></div></div>`
+    : t.etat === "erreur" ? `<div class="err">${esc(t.message)}</div>` : `<div class="note">✓ ${esc(t.message || "Terminé")}</div>`;
+}
+window.lancer = lancer;
+
+// --- volet de détail d'une action ---
+function ouvrirAction(a) {
+  const c = a.calcul;
+  const effort = { 1: "faible", 2: "moyen", 3: "fort" }[a.effort];
+  $("#drawer").innerHTML = `<div class="drawer-bg" onclick="fermer()"></div><div class="drawer" role="dialog" aria-label="Détail de l'action">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><span class="chip">${esc(TYPES_ACTION[a.type] || a.type)}</span><button class="btn sec sm" onclick="fermer()">Fermer</button></div>
+    <div><div class="h" style="font-size:20px;font-weight:600">${esc(a.titre)}</div>${a.requete ? `<div class="muted" style="margin-top:4px">« ${esc(a.requete)} »</div>` : ""}${lien(a.page)}</div>
+    <div class="panel" style="padding:16px"><span class="lbl">Calcul du score</span>
+      ${c ? `<div class="stat"><span class="muted">Impressions / période</span><span class="mono">${fmt(c.impressions)}</span></div>
+      <div class="stat"><span class="muted">CTR actuel</span><span class="mono">${pct(c.ctrActuel, 2)}</span></div>
+      <div class="stat"><span class="muted">CTR cible (position ${c.positionVisee ?? "—"})</span><span class="mono">${pct(c.ctrCible, 2)}</span></div>` : ""}
+      <div class="stat"><span class="muted">Gain estimé</span><span class="mono up">+${fmt(a.gain)} clics</span></div>
+      <div class="stat"><span class="muted">× Confiance</span><span class="mono">${a.confiance.toLocaleString("fr-FR")}</span></div>
+      <div class="stat"><span class="muted">÷ Effort</span><span class="mono">${a.effort} (${effort})</span></div>
+      <div class="stat" style="font-size:15px"><b>Score</b><b class="mono" style="color:var(--accent)">${fmt(a.score)}</b></div></div>
+    <div><span class="lbl">Lignage des données</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${a.sources.map((s) => `<span class="chip link">${esc(s)}</span>`).join("")}</div></div>
+    <div><span class="lbl">Recommandation</span><p style="margin:8px 0 0;line-height:1.55">${esc(a.detail)}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${btn(a.commande, "Copier la commande Claude", "btn")}${a.requete ? `<button class="btn sec" onclick="fermer();benchDepuis(${attr(a.requete)},${attr(a.page || "")})">Benchmarker le top 3</button>` : ""}</div>
+  </div>`;
+}
+window.ouvrirAction = (i) => ouvrirAction(state.actions[i]);
+window.fermer = () => { $("#drawer").innerHTML = ""; };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermer(); });
+window.benchDepuis = (requete, page) => { state.filtres.benchReq = requete; state.filtres.benchPage = page; changerVue("bench"); };
+
+// --- Explications de chaque vue, pour quelqu'un qui découvre le dashboard ---
+const AIDE = {
+  cockpit: ["Le résumé de la santé SEO du site sur la période choisie.",
+    "Les cartes du haut comparent la période à la précédente (▲ vert = mieux, ▼ rouge = moins bien). « Ce qui a changé » liste les baisses anormales. « Où est la valeur » montre les grands sujets du site : plus un bloc est grand, plus il est vu dans Google ; vert = il gagne des clics, rouge = il en perd.",
+    "Commencer par les alertes critiques, puis traiter les actions du tableau « Quoi faire maintenant » dans l'ordre du score."],
+  visi: ["L'indicateur officiel (KR) du SEO : à quel point INDIGO Neo est visible dans Google sur une liste fixe de recherches importantes (parking + ville, gare, aéroport…), qu'il y ait un clic ou non.",
+    "100 % = premier sur toutes les recherches de la liste ; 0 % = absent. Une recherche importante compte plus qu'une petite. On compare chaque mois à la baseline (le point de départ) et à la cible de fin d'année.",
+    "Regarder les typologies qui baissent (tableau « Par typologie ») et les requêtes au score faible : ce sont les pages à retravailler."],
+  local: ["La visibilité des fiches des parkings (Google, Apple Plans, Bing et annuaires, gérées dans Yext) : combien de fois elles sont vues et ce que les gens y font.",
+    "Toutes les données viennent de l'API Yext ; choisis un pays ou un dossier (France, bornes de recharge France, Belgique…) en haut. « Vues Maps » et « Vues Search » = affichages de la fiche dans Google Maps et dans la recherche Google ; « Itinéraires » = demandes de trajet vers le parking ; « Clics site web » = clics sur le bouton qui mène au site ; « Appels » = appels lancés depuis la fiche. Le tableau « Par éditeur » compare chaque plateforme au même mois de l'an dernier. Le bloc Scout montre la place des parkings dans Google Maps et dans les réponses IA face aux concurrents (rang 1 = premier ; une fiche absente compte 41). Le trafic Search Console des fiches est en complément, en bas.",
+    "Corriger les fiches en anomalie, créer une page pour les fiches qui n'en ont pas, et vérifier les pages parking qui reçoivent du trafic organique mais aucun trafic de fiche (fiche absente ou mal reliée)."],
+  mots: ["Toutes les recherches pour lesquelles le site apparaît dans Google (ou Bing), regroupées et comparées à la période précédente.",
+    "Top 3 = les 3 premiers résultats (la majorité des clics), 4-10 = première page, 11-20 = deuxième page. « Marque » = recherches contenant Indigo : elles ne mesurent pas le travail SEO. Les clusters regroupent les recherches par sujet.",
+    "Surveiller les sorties du Top 3, et travailler les requêtes en 4-20 : c'est là que les gains sont les plus rapides."],
+  pages: ["Chaque page du site avec ses chiffres Google, son état technique (crawl) et sa vitesse, plus la liste priorisée des actions à mener.",
+    "Les étiquettes signalent les problèmes : « zombie » = page indexable que personne ne voit, « orpheline » = aucun lien ne mène à elle, « profonde » = trop de clics depuis l'accueil, « contenu mince » = moins de 300 mots. Le score d'une action = clics à gagner × probabilité de réussite ÷ effort.",
+    "Prendre les actions par score décroissant ; cliquer sur une action pour voir le calcul et copier la commande pour Claude."],
+  maillage: ["Les liens entre les pages du site : combien de liens pointent vers chaque page (entrants) et combien en partent (sortants).",
+    "Plus une page reçoit de liens, plus Google la considère importante. Le « PageRank interne » (0 à 100) résume cette importance. Une page qui fait beaucoup d'impressions mais reçoit peu de liens est sous-exploitée ; une page très liée sans aucun trafic gaspille cette popularité.",
+    "Ajouter des liens vers les pages « à renforcer » depuis les pages fortes du même sujet ; cliquer sur une URL pour voir qui pointe vers elle."],
+  alertes: ["Tout ce qui a baissé de façon anormale et mérite d'être vérifié.",
+    "Critique = à traiter cette semaine (forte perte de trafic, page en erreur avec du trafic) ; important = à surveiller ; info = signal faible. Les seuils se règlent en haut du bloc.",
+    "Pour chaque alerte critique : vérifier la page (en ligne ? indexable ?), la concurrence sur la requête, et la saisonnalité."],
+  crawl: ["Un robot parcourt le site comme Google, de lien en lien depuis l'accueil, et relève l'état de chaque page.",
+    "200 = page OK, 301/308 = redirection, 404 = page introuvable. La profondeur = nombre de clics depuis l'accueil (idéalement 3 au maximum). « Liens cassés » = liens internes vers des pages en erreur ; « orphelines » = pages du sitemap qu'aucun lien n'atteint.",
+    "Corriger d'abord les liens cassés et les liens vers des redirections, puis remonter les pages trop profondes."],
+  vitesse: ["La rapidité et la stabilité des pages, mesurées par Google sur les vrais visiteurs (Core Web Vitals).",
+    "LCP = temps d'affichage du contenu principal (bon ≤ 2,5 s), INP = réactivité aux clics (bon ≤ 200 ms), CLS = décalage de la page pendant le chargement (bon ≤ 0,1). « Terrain » = vrais utilisateurs, « labo » = test simulé.",
+    "Traiter en priorité les pages à fort trafic notées « mauvais », avec les optimisations les plus rentables listées en bas."],
+  bench: ["La comparaison d'une page du site avec les 3 premiers résultats Google sur une recherche donnée.",
+    "On compare la longueur, la structure (titres H2/H3), la présence d'une FAQ ou d'un tableau, les données structurées et le vocabulaire. « Couverture » = part des mots utilisés par les concurrents qu'on retrouve sur la page.",
+    "Combler les écarts listés et intégrer les termes manquants pertinents, puis remesurer quelques semaines plus tard."],
+  perf: ["Les chiffres bruts de Search Console et Bing : clics, impressions, CTR et position.",
+    "CTR = part des personnes qui cliquent après avoir vu le site ; position = rang moyen dans les résultats (1 = premier).",
+    "Vue de contrôle : pour décider, préférer la vue d'ensemble et les mots-clés."],
+  opp: ["Les opportunités détectées automatiquement dans Search Console.",
+    "CTR faible = bien classé mais peu cliqué (titre à revoir) ; page 2 = presque en première page ; cannibalisation = plusieurs pages se concurrencent ; déclin = page qui perd du trafic.",
+    "Copier la commande et la coller dans Claude Code pour obtenir la correction."],
+  disc: ["Le trafic venant de Google Discover, le fil d'actualités de l'application Google.", "Discover ne se « demande » pas : Google choisit. Ces chiffres montrent ce qui a été poussé.", "Soigner les images (1200 px), les titres et la fraîcheur des articles."],
+  tech: ["Un contrôle rapide des pages du sitemap et les données d'exploration de Bing.", "Chaque ligne est un type de problème avec le nombre de pages concernées.", "Pour une analyse complète (liens, profondeur), utiliser plutôt l'onglet Crawl."],
+  cont: ["Le suivi des articles en cours de création ou publiés.", "Chaque article avance du brief à la publication et au partage Facebook.", "Copier la commande pour lancer un nouvel article avec Claude."],
+  sea: ["Le croisement entre Google Ads (payant) et le SEO (gratuit).", "À gauche, les recherches payées alors que le site est déjà dans le Top 3 gratuit (économies possibles) ; à droite, celles qui convertissent en payant mais où le site est absent en gratuit (contenus à créer).", "Tester une baisse d'enchères sur les premières, créer des pages pour les secondes."],
+};
+function aideHtml(tab) {
+  const a = AIDE[tab]; if (!a) return "";
+  const ferme = memo("pilote-aide-" + tab) === "0";
+  return `<details class="note" ${ferme ? "" : "open"} ontoggle="memo('pilote-aide-${tab}', this.open ? '1' : '0')" style="line-height:1.55">
+    <summary style="color:var(--ink);font-weight:600">ⓘ À quoi sert cette vue ?</summary>
+    <div style="margin-top:8px"><b style="color:var(--ink)">${esc(a[0])}</b></div>
+    <div style="margin-top:6px"><span class="lbl" style="margin-right:6px">Comment lire</span>${esc(a[1])}</div>
+    <div style="margin-top:6px"><span class="lbl" style="margin-right:6px">Que faire</span>${esc(a[2])}</div></details>`;
+}
+window.memo = (k, v) => memo(k, v);
+
+const TYPES_ACTION = { meta: "Title & meta", contenu: "Contenu", maillage: "Maillage", cannibalisation: "Cannibalisation", declin: "Déclin", technique: "Technique", indexation: "Indexation", vitesse: "Vitesse", profondeur: "Profondeur", title: "Title" };
+const NOTE = { bon: ["good", "Bon"], a_ameliorer: ["warn", "À améliorer"], mauvais: ["bad", "Mauvais"] };
+const noteChip = (n) => n ? `<span class="chip ${NOTE[n][0]}">${NOTE[n][1]}</span>` : '<span class="faint">—</span>';
+const gravIco = { critique: ["#2B1712", "#FF9F85", "!"], important: ["#2A2410", "#FFC857", "▼"], info: ["#141C31", "#97A3BC", "i"] };
+
+function tableActions(actions, max = 500) {
+  state.actions = actions;
+  return tableau("actions", [
+    { k: "titre", label: "Action", f: (a) => `<button class="rowlink" onclick="ouvrirAction(${actions.indexOf(a)})">${esc(a.titre)}</button>${a.requete ? `<div class="faint" style="font-size:12px">« ${esc(a.requete)} »</div>` : ""}` },
+    { k: "type", label: "Type", f: (a) => `<span class="chip">${TYPES_ACTION[a.type] || a.type}</span>` },
+    { k: "page", label: "Cible", f: (a) => lien(a.page) },
+    { k: "gain", label: "Gain", n: 1, f: (a) => `<span class="mono up">+${fmt(a.gain)}</span>` },
+    { k: "confiance", label: "Confiance", n: 1, f: (a) => `<span class="mono">${Math.round(a.confiance * 100)} %</span>` },
+    { k: "effort", label: "Effort", n: 1, f: (a) => `<span class="mono">${"●".repeat(a.effort)}<span class="faint">${"●".repeat(3 - a.effort)}</span></span>` },
+    { k: "score", label: "Score", n: 1, f: (a) => `<b class="mono" style="color:var(--accent)">${fmt(a.score)}</b>` },
+    { label: "", f: (a) => btn(a.commande, "Copier") },
+  ], actions, { max, vide: "Aucune action détectée." });
+}
+function listeAlertes(al) {
+  return al.map((a) => { const [bg, c, i] = gravIco[a.gravite]; return `<div class="an"><span class="ico" style="background:${bg};color:${c}">${i}</span>
+    <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="t">${esc(a.titre)}</span><span class="tag ${a.gravite}">${a.gravite}</span></span>
+    <span class="d">${esc(a.detail)}</span>${a.cible ? lien(a.cible) : ""}</span></div>`; }).join("") || '<div class="empty">Rien d\'anormal sur la période.</div>';
+}
+
+// --- vues ---
+const vues = {
+  async cockpit() {
+    const d = await api(`/api/cockpit?${q()}`);
+    const k = d.kpis;
+    state.nbAlertes = d.nbAlertes; dessinerNav();
+    dessinerSources(d.sources);
+    const s14 = (cle) => d.serie.slice(-28).map((r) => r[cle]);
+    const crit = d.alertes.filter((a) => a.gravite === "critique").length;
+    const phrase = `${fmtK(k.clicks)} clics sur ${jours()} jours (${k.varClicks == null ? "pas de comparaison" : (k.varClicks >= 0 ? "+" : "−") + pct(Math.abs(k.varClicks))}), ${fmt(k.top3)} requêtes dans le Top 3. ${crit ? `${crit} alerte${crit > 1 ? "s" : ""} critique${crit > 1 ? "s" : ""} à traiter en priorité.` : "Aucune alerte critique."}`;
+    const clusters = d.clusters.filter((c) => c.impressions > 0);
+    const sel = clusters[Math.min(state.cluster, clusters.length - 1)];
+    const W = 760, H = 360;
+    const tm = treemap(clusters.map((c) => ({ v: c.impressions, c })), W, H);
+    state.actions = d.actions;
+    return `
+      <div class="hero"><div><h1 class="h">Bonjour Abdoul,</h1><p>${phrase}</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip bad">${fmt(d.nbAlertes)} alertes</span><span class="chip good">${fmt(d.nbActions)} actions · top 20 : +${fmtK(d.gainTop20)} clics</span>${d.moteur === "bing" ? '<span class="chip link">Moteur : Bing</span>' : ""}</div></div>
+      <section class="grid kpis" aria-label="Indicateurs clés">
+        ${kpi("Clics", fmtK(k.clicks), varHtml(k.varClicks), `${pct(k.ctr, 2)} de CTR`, { src: "GSC", spark: s14("clicks") })}
+        ${kpi("Impressions", fmtK(k.impressions), varHtml(k.varImpressions), `Position moyenne ${pos(k.position)}`, { src: "GSC", spark: s14("impressions"), couleur: "var(--link)" })}
+        ${kpi("Clics hors marque", fmtK(k.horsMarque.clicks), varHtml(k.horsMarque.varClicks), `${pct(k.horsMarque.clicks + k.marque.clicks ? k.horsMarque.clicks / (k.horsMarque.clicks + k.marque.clicks) : 0, 0)} des clics attribués à une requête · marque ${fmtK(k.marque.clicks)}`, { src: esc(d.marque.join(", ")) })}
+        ${kpi("Requêtes Top 3", fmt(k.top3), deltaNb(k.deltaTop3), `Top 10 : ${fmt(k.top10)} (${k.deltaTop10 >= 0 ? "+" : ""}${fmt(k.deltaTop10)})`, { src: `${fmt(k.requetes)} requêtes` })}
+        ${d.moteur === "bing" ? "" : kpi("Position moyenne", pos(k.position), deltaPos(k.deltaPosition), "pondérée par les impressions", { spark: s14("position").map((x) => -x), couleur: "var(--warn)" })}
+        ${d.bing ? kpi("Clics Bing", fmtK(d.bing.clicks), varHtml(d.bing.varClicks), `${pct(d.bing.part, 1)} des clics Google + Bing · ${fmtK(d.bing.impressions)} impr.`, { src: "Bing", spark: d.bing.serie.slice(-28), couleur: "#FFC857" }) : ""}
+      </section>
+      <div class="row">
+        <section class="panel" aria-label="Ce qui a changé"><h2>Ce qui a changé</h2><p class="sub">Écarts &gt; 2σ sur 28 jours glissants, baisses par page et par requête, marque et hors marque séparées</p>
+          ${listeAlertes(d.alertes.slice(0, 6))}
+          ${d.nbAlertes > 6 ? `<div style="margin-top:12px"><button class="btn sec sm" onclick="changerVue('alertes')">Voir les ${fmt(d.nbAlertes)} alertes</button></div>` : ""}</section>
+        <section class="panel" aria-label="Clics organiques"><h2>Clics organiques</h2><p class="sub">Du ${d.periode.debut} au ${d.periode.fin}, comparé à la période précédente</p>
+          ${ligne([{ nom: "Période", couleur: "var(--accent)", points: d.serie }, { nom: "Période précédente", couleur: "var(--series2)", pointille: true, points: d.seriePrecedente }], { h: 230 })}
+          <div style="margin-top:14px">${barres(d.distribution.map((x) => ({ label: x.nom, valeur: x.nb, x })), { couleur: (x) => ["#B8F35A", "#7FCB3A", "#5CD3F5", "#4A5878", "#2C3A5C"][d.distribution.indexOf(x.x)], droite: (x) => `${fmt(x.valeur)} <span class="${x.x.deltaNb >= 0 ? "up" : "down"}">${x.x.deltaNb >= 0 ? "+" : ""}${fmt(x.x.deltaNb)}</span>` })}</div></section>
+      </div>
+      <section class="panel" aria-label="Où est la valeur"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>Où est la valeur</h2><p class="sub">Clusters thématiques · surface = impressions · couleur = tendance des clics (−30 % → +30 %)</p></div>
+        <button class="btn sec sm" onclick="changerVue('mots')">Tous les clusters</button></div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <div style="flex:2 1 480px;min-width:0"><div class="tm-wrap" id="tm">${tm.map((n) => `<button class="tm ${n.i === state.cluster ? "on" : ""}" onclick="state.cluster=${n.i};render(false)" style="left:${(n.x / W) * 100}%;top:${(n.y / H) * 100}%;width:calc(${(n.w / W) * 100}% - 4px);height:calc(${(n.h / H) * 100}% - 4px);background:${couleurTendance(n.c.varClicks)}" title="${esc(n.c.nom)}">
+            <b>${esc(n.c.nom)}</b>${n.w > 90 && n.h > 50 ? `<span>${fmtK(n.c.impressions)} impr. · ${fmtK(n.c.clicks)} clics ${n.c.varClicks == null ? "" : (n.c.varClicks >= 0 ? "+" : "") + Math.round(n.c.varClicks * 100) + " %"}</span>` : ""}</button>`).join("")}</div></div>
+          ${sel ? `<div style="flex:1 1 280px;min-width:0" class="panel"><span class="lbl">Cluster</span><div class="h" style="font-size:20px;font-weight:600;margin:4px 0 10px">${esc(sel.nom)}</div>
+            <div class="stat"><span class="muted">Requêtes</span><span class="mono">${fmt(sel.requetes)}</span></div>
+            <div class="stat"><span class="muted">Clics</span><span class="mono">${fmt(sel.clicks)} ${varHtml(sel.varClicks)}</span></div>
+            <div class="stat"><span class="muted">Position moyenne</span><span class="mono">${pos(sel.position)}</span></div>
+            <div class="stat"><span class="muted">Top 3 / Top 10</span><span class="mono">${fmt(sel.top3)} / ${fmt(sel.top10)}</span></div>
+            <div class="stat"><span class="muted">Pages qui rankent</span><span class="mono ${sel.pagesDifferentes > 1 ? "down" : ""}">${fmt(sel.pagesDifferentes)}${sel.pagesDifferentes > 1 ? " ⚠" : ""}</span></div>
+            <div class="stat"><span class="muted">Potentiel (CTR Top 3)</span><span class="mono up">+${fmt(sel.potentiel)} clics</span></div>
+            <div style="margin-top:10px">${sel.principales.slice(0, 6).map((r) => `<div class="stat"><span>${esc(r.requete)}</span><span class="mono faint">${pos(r.position)}</span></div>`).join("")}</div>
+            ${sel.page ? `<div style="margin-top:8px">${lien(sel.page)}</div>` : ""}</div>` : ""}
+        </div></section>
+      <section class="panel" aria-label="Quoi faire maintenant"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>Quoi faire maintenant</h2><p class="sub">score = gain (impressions × (CTR cible − CTR actuel)) × confiance ÷ effort · clic sur une action pour le détail</p></div>
+        <button class="btn sec sm" onclick="changerVue('pages')">Tout le backlog</button></div>
+        ${tableActions(d.actions, 12)}
+        ${!d.sources.crawl ? `<div class="note" style="margin-top:12px">Lance un <a href="#" onclick="changerVue('crawl');return false">crawl</a> et une analyse <a href="#" onclick="changerVue('vitesse');return false">Core Web Vitals</a> : le backlog ajoutera les actions de maillage, de profondeur, de title, de redirection et de vitesse.</div>` : ""}
+      </section>`;
+  },
+
+  async visi() {
+    const d = await api(`/api/visibilite?${qs()}`);
+    const formule = `<div class="note" style="line-height:1.6"><b style="color:var(--ink)">Visibility Share = Σ (poids × score de position) ÷ Σ (poids × 100)</b>, sur un panier <b style="color:var(--ink)">fixe</b> de requêtes stratégiques hors marque.<br>
+      Barème : ${d.bareme.map(([m, s], i) => `${i === 0 ? "1" : d.bareme[i - 1][0] + 1 === m ? m : d.bareme[i - 1][0] + 1 + "–" + m} → ${s}`).join(" · ")} · au-delà de 20 ou absent → 0.
+      Poids = 2,5 × log10(impressions) borné de 1 à 10, pour qu'aucune requête n'écrase l'indice. Position = position moyenne mensuelle Search Console (et Bing pour l'indicateur Bing).</div>`;
+    if (!d.panier) return `<section class="panel"><h2>KR — Organic Search Visibility</h2>
+      <p class="sub">« Increase our Organic Search Visibility on strategic non-brand intents from X % to Y % » : la part de visibilité ne dépend ni du produit, ni de l'UX, ni des réponses sans clic.</p>${formule}
+      <p class="muted">Le panier est proposé à partir des 3 derniers mois complets de Search Console : requêtes hors marque (${esc((marque() || "").trim() || "termes de marque par défaut")}) de l'univers stationnement, réparties par typologie (${d.categories.map((c) => esc(c.nom)).join(", ")}), au moins 25 par typologie puis complétées par les plus fortes impressions. Il est ensuite <b>figé</b> : le KR compare des mois comparables.</p>
+      <div class="filters"><label class="inline">Taille du panier <select id="visiTaille">${[200, 300, 400, 500, 800].map((v) => `<option ${v === 400 ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <button class="btn" id="visiCreer" onclick="creerPanier()">Créer le panier</button></div></section>`;
+    const pa = d.panier;
+    const G = Array.isArray(d.google) ? d.google : [], B = Array.isArray(d.bing) ? d.bing : [];
+    const complets = G.filter((m) => !m.partiel);
+    const dernier = complets.at(-1), base = G.find((m) => m.mois === pa.baseline) ?? complets[0];
+    const bDernier = [...B].reverse().find((m) => !m.partiel);
+    const nomMois = (m) => new Date(m + "-15").toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+    const cible = pa.cible;
+    const avancement = dernier && base && cible ? Math.max(0, Math.min(1, (dernier.part - base.part) / (cible - base.part || 1))) : null;
+    const tousMois = [...new Set([...G.map((m) => m.mois), ...B.map((m) => m.mois)])].sort();
+    const pt = (l, m) => { const x = l.find((y) => y.mois === m); return x ? x.part * 100 : null; };
+    const cat = f("visiCat", "toutes");
+    const reqs = (dernier?.requetes ?? []).map((r) => { const b = base?.requetes?.find((x) => x.requete === r.requete); return { ...r, scoreBase: b?.score ?? null, contribution: r.poids * r.score }; });
+    const lr = cat === "toutes" ? reqs : reqs.filter((r) => r.categorie === cat);
+    const nomCat = Object.fromEntries(pa.categories.map((c) => [c.id, c.nom]));
+    return `
+      <div class="hero"><div><h1 class="h">Organic Search Visibility</h1><p>Part de visibilité d'INDIGO Neo sur ${fmt(pa.nbRequetes)} requêtes stratégiques hors marque. Panier figé le ${new Date(pa.creeLe).toLocaleDateString("fr-FR")} (source : ${pa.periodeSource.debut} → ${pa.periodeSource.fin}).</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${exportBtn("panier", pa.requetes, [["requete", "Requête"], ["categorie", "Typologie"], ["poids", "Poids"]], "Panier (CSV)")}${reqs.length ? exportBtn("visibilite-mois", reqs, [["requete", "Requête"], ["categorie", "Typologie"], ["poids", "Poids"], ["position", "Position"], ["score", "Score"], ["contribution", "Poids × score"], ["scoreBase", "Score baseline"], ["clicks", "Clics"], ["impressions", "Impressions"]], "Calcul du mois (CSV)") : ""}</div></div>
+      ${!Array.isArray(d.google) ? erreur(d.google.erreur) : ""}
+      <section class="grid kpis">
+        ${kpi("KR · Visibility Google", dernier ? pct(dernier.part, 1) : "—", base && dernier ? deltaPt(dernier.part - base.part) : "", dernier ? `${nomMois(dernier.mois)} · baseline ${base ? pct(base.part, 1) + " (" + nomMois(base.mois) + ")" : "—"}` : "", { src: "KR", spark: complets.map((m) => m.part), couleur: "var(--accent)" })}
+        ${kpi("Cible", cible ? pct(cible, 1) : "—", "", avancement != null ? `${pct(avancement, 0)} du chemin parcouru${pa.echeance ? " · échéance " + esc(pa.echeance) : ""}` : "à définir ci-dessous")}
+        ${kpi("Visibility Bing", bDernier ? pct(bDernier.part, 1) : "—", "", bDernier ? `${nomMois(bDernier.mois)} · indicateur complémentaire` : Array.isArray(d.bing) ? "pas de données" : esc(d.bing.erreur), { src: "Bing", spark: B.filter((m) => !m.partiel).map((m) => m.part), couleur: "#FFC857" })}
+        ${kpi("Requêtes Top 3", dernier ? fmt(dernier.top3) : "—", base && dernier ? deltaNb(dernier.top3 - base.top3) : "", dernier ? `Top 10 : ${fmt(dernier.top10)} · absentes ou > 20 : ${fmt(dernier.absentes)}` : "")}
+        ${kpi("Clics du panier", dernier ? fmtK(dernier.clicks) : "—", base && dernier ? varHtml(base.clicks ? (dernier.clicks - base.clicks) / base.clicks : null) : "", dernier ? `${fmtK(dernier.impressions)} impressions · indicateur de suivi` : "")}
+      </section>
+      ${avancement != null ? `<div class="panel" style="padding:16px 22px"><div style="display:flex;justify-content:space-between;font-size:13px"><span class="muted">Baseline ${pct(base.part, 1)}</span><b>${pct(dernier.part, 1)}</b><span class="muted">Cible ${pct(cible, 1)}</span></div><div class="progress" style="height:10px"><div style="width:${avancement * 100}%"></div></div></div>` : ""}
+      <div class="row">
+        <section class="panel"><h2>Évolution mensuelle</h2><p class="sub">Mois en cours partiel (non compté dans le KR) · Bing : ≈ 6 mois d'historique dans l'API</p>
+          ${ligne([{ nom: "Google", couleur: "var(--accent)", points: tousMois.map((m) => ({ date: m, v: pt(G.filter((x) => !x.partiel), m) })) }, { nom: "Bing", couleur: "#FFC857", points: tousMois.map((m) => ({ date: m, v: pt(B.filter((x) => !x.partiel), m) })) }, ...(cible ? [{ nom: "Cible", couleur: "var(--series2)", pointille: true, points: tousMois.map((m) => ({ date: m, v: cible * 100 })) }] : [])],
+            { cle: "v", h: 240, etiquette: (p) => nomMois(p.date), format: (v) => Math.round(v) + " %", maxFixe: Math.max(10, Math.ceil(Math.max(...G.map((m) => m.part * 100), ...B.map((m) => m.part * 100), (cible ?? 0) * 100) / 10) * 10) })}</section>
+        <section class="panel"><h2>Par typologie</h2><p class="sub">${dernier ? nomMois(dernier.mois) : ""} vs baseline${bDernier ? " · Bing" : ""}</p>
+          <table><tr><th>Typologie</th><th class="n">Req.</th><th class="n">Google</th><th class="n">Δ base</th>${bDernier ? '<th class="n">Bing</th>' : ""}</tr>
+          ${(dernier?.parCategorie ?? []).map((c) => { const b0 = base?.parCategorie.find((x) => x.id === c.id); const bb = bDernier?.parCategorie.find((x) => x.id === c.id);
+            return `<tr><td><button class="rowlink" onclick="filtre('visiCat','${c.id}')">${esc(c.nom)}</button></td><td class="n">${fmt(c.requetes)}</td><td class="n mono">${pct(c.part, 1)}</td><td class="n">${b0 ? deltaPt(c.part - b0.part) : "—"}</td>${bDernier ? `<td class="n mono">${bb ? pct(bb.part, 1) : "—"}</td>` : ""}</tr>`; }).join("")}</table></section>
+      </div>
+      <section class="panel"><h2>Réglages du KR</h2><div class="filters">
+        <label class="inline">Baseline <select id="visiBase">${complets.map((m) => `<option value="${m.mois}" ${m.mois === base?.mois ? "selected" : ""}>${nomMois(m.mois)} · ${pct(m.part, 1)}</option>`).join("")}</select></label>
+        <label class="inline">Cible (%) <input id="visiCible" type="number" step="0.5" min="0" max="100" value="${cible ? Math.round(cible * 1000) / 10 : ""}" style="width:90px"></label>
+        <label class="inline">Échéance <input id="visiEch" placeholder="2027-12" value="${esc(pa.echeance ?? "")}" style="width:100px"></label>
+        <button class="btn" onclick="reglerKr()">Enregistrer</button>
+        <button class="btn sec" onclick="if(confirm('Régénérer le panier change la base de calcul du KR. Continuer ?'))creerPanier()">Régénérer le panier</button></div>
+        <p class="sub" style="margin:0">Le panier est dans <code>data/visibilite/${esc(court(site()).replace(/\/.*$/, "").replace(/^www\./, ""))}.json</code> : tu peux y retirer ou ajouter des requêtes et ajuster les poids (par exemple avec les volumes Keyword Planner). Toute modification recalcule l'historique.</p></section>
+      ${formule}
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2>Requêtes du panier <small>${dernier ? nomMois(dernier.mois) : ""}</small></h2>
+        ${segment("visiCat", [["toutes", "Toutes"], ...pa.categories.map((c) => [c.id, c.nom.replace(/^Parking \+ /, "")])], "toutes")}</div>
+        ${tableau("visireq", [
+          { k: "requete", label: "Requête", f: (r) => `<b>${esc(r.requete)}</b><div class="faint" style="font-size:12px">${esc(nomCat[r.categorie] || r.categorie)}</div>` },
+          { k: "poids", label: "Poids", n: 1, f: (r) => fmt(r.poids) },
+          { k: "position", label: "Position", n: 1, f: (r) => pos(r.position) },
+          { k: "score", label: "Score", n: 1, f: (r) => `<b class="mono" style="color:${r.score >= 70 ? "var(--accent)" : r.score >= 25 ? "var(--warn)" : "var(--bad)"}">${r.score}</b>` },
+          { k: "scoreBase", label: "Score base", n: 1, f: (r) => r.scoreBase == null ? "—" : `${r.scoreBase} ${r.score !== r.scoreBase ? deltaNb(r.score - r.scoreBase) : ""}` },
+          { k: "contribution", label: "Poids × score", n: 1, f: (r) => fmt(r.contribution) },
+          { k: "clicks", label: "Clics", n: 1, f: (r) => fmt(r.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (r) => fmt(r.impressions) },
+        ], lr, { max: 1000 })}</section>
+      <section class="panel"><h2>Indicateurs complémentaires</h2><p class="sub">À suivre sous le KR, sans les mélanger à l'indice</p>
+        <div class="stat"><span>Visibilité IA (AI Overviews, AI Mode)</span><span class="muted">vue « fonctionnalités génératives » de Search Console : pas encore exposée par l'API, à reporter à la main ; ou Yext Scout</span></div>
+        <div class="stat"><span>Visibilité locale (Local Pack, Maps)</span><span class="muted">dépend du point de recherche : à mesurer par grille géographique (Yext, Local Falcon…), séparément</span></div>
+        <div class="stat"><span>Visibilité Bing</span><span class="mono">${bDernier ? pct(bDernier.part, 1) : "—"}</span></div>
+        <div class="stat"><span>Clics / impressions organiques</span><span class="muted">onglet Vue d'ensemble : trafic réellement capté, plus le KR</span></div></section>`;
+  },
+
+  async local() {
+    const d = await api(`/api/local?${q()}`);
+    const y = d.yext, t = d.totaux, v = d.visibiliteLocale;
+    const M = y?.mensuel ?? [];
+    const der = M.at(-1), n1 = M.find((m) => der && m.mois === `${Number(der.mois.slice(0, 4)) - 1}${der.mois.slice(4)}`);
+    const nomMois = (m) => new Date(m + "-15").toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+    const vue = f("localVue", "pages");
+    const rech = f("localRech", "").toLowerCase();
+    const lignes = rech ? d.lignes.filter((l) => l.url.toLowerCase().includes(rech)) : d.lignes;
+    // --- Vue d'ensemble Yext (API Analytics) : par pays / dossier, Search vs Maps, actions par éditeur ---
+    const Y = await api(`/api/yext?segment=${encodeURIComponent(f("localSeg", "tous"))}`).catch((e) => ({ erreur: e.message }));
+    const YM = Y.mois ?? [];
+    const yd = YM.at(-1), y1 = YM.length >= 13 ? YM[YM.length - 13] : null;
+    const ev = (a, b) => (b ? (a - b) / b : null);
+    const editeurs = (m) => m ? [
+      { nom: "Google", vuesSearch: m.googleSearch, vuesMaps: m.googleMaps, vues: m.googleSearch + m.googleMaps, ...m.google },
+      { nom: "Apple Plans", vues: m.appleVues, ...m.apple },
+      { nom: "Bing", vues: m.bingVues, itineraires: 0, siteWeb: 0, appels: 0, total: 0 },
+      { nom: "Autres annuaires", vues: null, ...m.autresEditeurs },
+    ] : [];
+    const Ed = editeurs(yd), Ed1 = editeurs(y1);
+    const tot = (l, k) => l.reduce((s, e) => s + (e[k] ?? 0), 0);
+    const cel = (i, k) => { const a = Ed[i]?.[k], b = Ed1[i]?.[k]; return a == null ? '<span class="faint">—</span>' : `<b class="mono">${fmt(a)}</b> ${b ? varHtml(ev(a, b)) : '<span class="faint" style="font-size:11px">—</span>'}`; };
+    const mY = yd ? nomMois(yd.mois) : "", mY1 = y1 ? nomMois(y1.mois) : "";
+    const serie = (fn) => YM.map((m) => ({ date: m.mois, v: fn(m) }));
+    const blocYext = Y.erreur ? `<div class="err">${esc(Y.erreur)}</div>` : !yd ? `<div class="note">Pas de données Yext pour ce dossier.</div>` : `
+      <section class="panel" style="padding:14px 18px"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="lbl">Pays / dossier Yext</span>
+        ${segment("localSeg", Y.segments.map((s) => [s.id, s.nom]), "tous")}</div></section>
+      <section class="grid kpis">
+        ${kpi(`Vues Google Maps (${mY})`, fmtK(yd.googleMaps), y1 ? varHtml(ev(yd.googleMaps, y1.googleMaps)) : "", `vs ${mY1} : ${fmtK(y1?.googleMaps)}`, { src: "Yext", spark: YM.map((m) => m.googleMaps), couleur: "#FFC857" })}
+        ${kpi(`Vues Google Search (${mY})`, fmtK(yd.googleSearch), y1 ? varHtml(ev(yd.googleSearch, y1.googleSearch)) : "", `vs ${mY1} : ${fmtK(y1?.googleSearch)} · ${pct(yd.googleMaps + yd.googleSearch ? yd.googleSearch / (yd.googleMaps + yd.googleSearch) : 0, 0)} des vues Google`, { src: "Yext", spark: YM.map((m) => m.googleSearch), couleur: "var(--link)" })}
+        ${kpi(`Itinéraires (${mY})`, fmtK(tot(Ed, "itineraires")), y1 ? varHtml(ev(tot(Ed, "itineraires"), tot(Ed1, "itineraires"))) : "", `Google ${fmtK(yd.google.itineraires)} · Apple ${fmtK(yd.apple.itineraires)}`, { src: "Yext", spark: YM.map((m) => m.google.itineraires + m.apple.itineraires), couleur: "var(--accent)" })}
+        ${kpi(`Clics vers le site (${mY})`, fmtK(tot(Ed, "siteWeb")), y1 ? varHtml(ev(tot(Ed, "siteWeb"), tot(Ed1, "siteWeb"))) : "", `Google ${fmtK(yd.google.siteWeb)} · Apple ${fmtK(yd.apple.siteWeb)}`, { src: "Yext", spark: YM.map((m) => m.google.siteWeb + m.apple.siteWeb), couleur: "var(--link)" })}
+        ${kpi(`Appels (${mY})`, fmtK(tot(Ed, "appels")), y1 ? varHtml(ev(tot(Ed, "appels"), tot(Ed1, "appels"))) : "", `vs ${mY1} : ${fmtK(tot(Ed1, "appels"))}`, { src: "Yext", spark: YM.map((m) => m.google.appels + m.apple.appels), couleur: "#FF9F85" })}
+        ${kpi(`Vues Apple Plans (${mY})`, fmtK(yd.appleVues), y1 ? varHtml(ev(yd.appleVues, y1.appleVues)) : "", `vs ${mY1} : ${y1 ? fmtK(y1.appleVues) : "—"}`, { src: "Yext", spark: YM.map((m) => m.appleVues), couleur: "#C9D2E6" })}
+        ${kpi(`Vues Bing (${mY})`, fmtK(yd.bingVues), y1?.bingVues ? varHtml(ev(yd.bingVues, y1.bingVues)) : "", y1?.bingVues ? `vs ${mY1} : ${fmtK(y1.bingVues)}` : "pas de données Bing il y a un an", { src: "Yext", spark: YM.map((m) => m.bingVues), couleur: "var(--series2)" })}
+      </section>
+      <section class="panel"><h2>Par éditeur <small>${esc(Y.segment.nom)} · ${mY} vs ${mY1}</small></h2><p class="sub">Où les fiches sont vues et ce que les gens y font</p>
+        <div class="scroll"><table><thead><tr><th>Éditeur</th><th class="n">Vues Search</th><th class="n">Vues Maps</th><th class="n">Vues totales</th><th class="n">Itinéraires</th><th class="n">Clics site web</th><th class="n">Appels</th><th class="n">Actions totales</th><th class="n">Part des actions</th></tr></thead><tbody>
+          ${Ed.map((e, i) => `<tr><td><b>${esc(e.nom)}</b></td><td class="n">${e.vuesSearch == null ? '<span class="faint">—</span>' : cel(i, "vuesSearch")}</td><td class="n">${e.vuesMaps == null ? '<span class="faint">—</span>' : cel(i, "vuesMaps")}</td><td class="n">${cel(i, "vues")}</td><td class="n">${cel(i, "itineraires")}</td><td class="n">${cel(i, "siteWeb")}</td><td class="n">${cel(i, "appels")}</td><td class="n">${cel(i, "total")}</td><td class="n mono">${pct(tot(Ed, "total") ? e.total / tot(Ed, "total") : 0, 1)}</td></tr>`).join("")}
+          <tr><td class="faint">Total</td><td class="n mono">${fmt(yd.googleSearch)}</td><td class="n mono">${fmt(yd.googleMaps)}</td><td class="n mono">${fmt(tot(Ed, "vues"))}</td><td class="n mono">${fmt(tot(Ed, "itineraires"))}</td><td class="n mono">${fmt(tot(Ed, "siteWeb"))}</td><td class="n mono">${fmt(tot(Ed, "appels"))}</td><td class="n mono">${fmt(tot(Ed, "total"))}</td><td></td></tr>
+        </tbody></table></div>
+        <p class="faint" style="font-size:12px;margin:10px 0 0">Google : vues de la fiche dans Search et dans Maps. Apple : vues de la fiche Plans. Bing : apparitions dans les recherches (données hebdomadaires regroupées par mois ; Bing ne remonte pas d'actions). « Autres annuaires » : Cylex, Opendi, HotFrog… (vues non disponibles par dossier). « Actions totales » inclut aussi les partages, photos et e-mails.</p></section>
+      <div class="row">
+        <section class="panel"><h2>Google : vues Search et Maps par mois</h2><p class="sub">${esc(Y.segment.nom)} · affichages de la fiche dans Google Maps et dans la recherche Google</p>
+          ${ligne([{ nom: "Maps", couleur: "#FFC857", points: serie((m) => m.googleMaps) }, { nom: "Search", couleur: "var(--link)", points: serie((m) => m.googleSearch) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+        <section class="panel"><h2>Itinéraires par mois</h2><p class="sub">Demandes de trajet vers le parking, par éditeur</p>
+          ${ligne([{ nom: "Google", couleur: "var(--accent)", points: serie((m) => m.google.itineraires) }, { nom: "Apple Plans", couleur: "#C9D2E6", points: serie((m) => m.apple.itineraires) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+      </div>
+      <div class="row">
+        <section class="panel"><h2>Clics vers le site par mois</h2><p class="sub">Clics sur le bouton « Site web » des fiches, par éditeur</p>
+          ${ligne([{ nom: "Google", couleur: "var(--link)", points: serie((m) => m.google.siteWeb) }, { nom: "Apple Plans", couleur: "#C9D2E6", points: serie((m) => m.apple.siteWeb) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+        <section class="panel"><h2>Appels et vues Apple / Bing par mois</h2><p class="sub">Appels depuis les fiches (Google) et vues des fiches hors Google</p>
+          ${ligne([{ nom: "Appels Google", couleur: "#FF9F85", points: serie((m) => m.google.appels) }, { nom: "Vues Apple", couleur: "#C9D2E6", points: serie((m) => m.appleVues) }, { nom: "Vues Bing", couleur: "var(--series2)", points: serie((m) => m.bingVues) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+      </div>
+      ${y ? `<section class="grid kpis">${kpi("Fiches Google (compte)", fmt(y.google.enLigne), `<span class="chip ${y.google.enAnomalie ? "bad" : "good"}">${fmt(y.google.enAnomalie)} en anomalie</span>`, `${fmt(y.fiches.actives)} parkings actifs · ${fmt(y.fiches.activesSansPage)} sans page · ${fmt(y.fiches.activesSansGooglePlaceId)} sans Google Place ID`, { src: "Yext" })}</section>` : ""}
+      <p class="faint" style="margin:0">API Analytics Yext · ${Y.fenetre.debut} → ${Y.fenetre.fin} (mois complets) · cache 12 h, « Actualiser » relit l'API</p>`;
+    return `
+      ${blocYext}
+      ${y?.scout ? (() => {
+        const sc = y.scout, mq = sc.marque;
+        const tv = sc.tauxVictoire.filter((x) => x.fiches >= 500).sort((a, b) => a.mois.localeCompare(b.mois));
+        const t0 = tv[0], t1 = tv.at(-1);
+        return `<section class="panel"><h2>Classement local face aux concurrents <small>Yext Scout · semaine du ${new Date(sc.semaine).toLocaleDateString("fr-FR")}</small></h2>
+          <p class="sub">Scout simule chaque semaine des recherches locales (« parking », « borne de recharge »…) autour de chaque fiche et relève la place d'INDIGO dans Google Maps et dans les réponses IA.</p>
+          <div class="grid kpis">
+            ${kpi("Rang Google Maps moyen", pos(mq.rangAvecAbsents), "", `${pos(mq.rangSiPresent)} quand la fiche apparaît · une absence compte 41`)}
+            ${kpi("Présence dans les recherches", pct(mq.apparitions / mq.recherches, 0), "", `${fmt(mq.apparitions)} apparitions sur ${fmt(mq.recherches)} recherches suivies`)}
+            ${t1 ? kpi("Taux de victoire Google", pct(t1.serp, 0), t0 ? varHtml((t1.serp - t0.serp) / t0.serp) : "", `face aux concurrents · ${t0 ? "vs " + nomMois(t0.mois) + " : " + pct(t0.serp, 0) : ""}`) : ""}
+            ${t1 ? kpi("Taux de victoire IA", pct(t1.ia, 0), t0 ? varHtml((t1.ia - t0.ia) / t0.ia) : "", `ChatGPT, Gemini, AI Overviews… ${t0 ? "· " + nomMois(t0.mois) + " : " + pct(t0.ia, 0) : ""}`) : ""}
+            ${kpi("Note Google moyenne", mq.note.toLocaleString("fr-FR") + " / 5", "", `fiches complètes à ${pct(mq.completude, 0)}`)}
+          </div>
+          <div class="row" style="margin-top:14px">
+            <div><span class="lbl">Taux de victoire par mois</span>${ligne([{ nom: "Google (local)", couleur: "var(--accent)", points: tv.map((x) => ({ date: x.mois, v: x.serp * 100 })) }, { nom: "Réponses IA", couleur: "var(--link)", points: tv.map((x) => ({ date: x.mois, v: x.ia == null ? null : x.ia * 100 })) }], { cle: "v", h: 190, etiquette: (p) => nomMois(p.date), format: (x) => Math.round(x) + " %", maxFixe: 100 })}
+              <p class="faint" style="font-size:12px;margin:4px 0 0">Part des recherches où INDIGO est devant ses concurrents. Mois avec moins de 500 fiches scannées masqués (non comparables).</p></div>
+            <div><span class="lbl">Fiches absentes des résultats locaux</span><p class="faint" style="font-size:12px;margin:4px 0 8px">Parkings non classés sur leur mot-clé principal, rapprochés de leur page par l'URL.</p>
+              ${tableau("absents", [
+                { k: "nom", label: "Fiche", f: (a) => `<b>${esc(a.nom)}</b><div class="faint" style="font-size:12px">${esc(a.adresse)} · ${a.note.toLocaleString("fr-FR")}★ (${fmt(a.avis)} avis)</div>${a.url ? lien(a.url) : '<span class="down" style="font-size:12px">pas de page de destination</span>'}${a.alerte ? `<div class="down" style="font-size:12px">⚠ ${esc(a.alerte)}</div>` : ""}` },
+                { k: "clicsOrganique", label: "Clics orga.", n: 1, f: (a) => a.clicsOrganique == null ? "—" : fmt(a.clicsOrganique) },
+                { k: "clicsFiche", label: "Clics fiche", n: 1, f: (a) => a.clicsFiche == null ? "—" : fmt(a.clicsFiche) },
+                { k: "liensEntrants", label: "Liens ent.", n: 1, f: (a) => a.liensEntrants == null ? "—" : fmt(a.liensEntrants) },
+              ], sc.parkingsAbsents, { max: 50 })}</div>
+          </div>
+          <p class="faint" style="font-size:12px;margin:10px 0 0">${esc(sc.remarques)}</p></section>`;
+      })() : ""}
+      <details class="panel"${f("localComplement", false) ? " open" : ""} ontoggle="state.filtres.localComplement = this.open">
+        <summary><h2 style="display:inline">Complément : trafic des fiches vers le site (Search Console)</h2></summary>
+        <p class="sub" style="margin-top:8px">Les clics « Site web » des fiches arrivent sur des URL avec un paramètre utm_ : Search Console les mesure page par page. Utile pour relier une fiche à sa page ; la visibilité locale, elle, se lit dans les chiffres Yext ci-dessus.</p>
+        <div class="grid kpis" style="margin-bottom:14px">
+          ${kpi("Clics depuis les fiches", fmtK(t.clicks), varHtml(t.varClicks), `${fmt(t.pages)} pages · Search Console`, { src: "GSC" })}
+          ${kpi("Impressions des liens de fiche", fmtK(t.impressions), varHtml(t.varImpressions), `position moyenne ${pos(t.position)}`, { src: "GSC" })}
+          ${v ? kpi("Score du panier KR (liens de fiche)", pct(v.part, 1), "", `Top 3 : ${fmt(v.top3)}`, { src: "GSC" }) : ""}
+        </div>
+      ${v ? `<section class="panel"><h2>Visibilité locale par typologie</h2><p class="sub">Score du panier KR calculé sur la position des liens de fiche (Local Pack, fiche d'établissement) au lieu des résultats classiques</p>
+        ${barres(v.parCategorie.map((c) => ({ label: c.nom.replace(/^Parking \+ /, ""), valeur: c.part * 100, c })), { couleur: () => "#FFC857", droite: (x) => `${pct(x.c.part, 1)} · ${x.c.requetes} req.` })}</section>` : ""}
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("localVue", [["pages", `Rapprochement fiche ↔ page (${fmt(d.lignes.length)})`], ["requetes", `Requêtes locales (${fmt(d.requetes.length)})`], ["sansfiche", `Pages sans trafic de fiche (${fmt(d.pagesOrganiquesSansFiche.length)})`], ["sanspage", `Fiches sans page (${fmt(y?.fiches.activesSansPage ?? 0)})`]], "pages")}
+        ${vue === "pages" ? exportBtn("local", lignes, [["url", "URL"], ["clicsLocal", "Clics fiche"], ["clicsLocalPrec", "Clics fiche préc."], ["impressionsLocal", "Impressions fiche"], ["positionLocal", "Position fiche"], ["clicsOrganique", "Clics organiques"], ["positionOrganique", "Position organique"], ["partLocal", "Part locale"], ["status", "HTTP"], ["liensEntrants", "Liens entrants"], ["mots", "Mots"]]) : ""}</div>
+        ${vue === "pages" ? `<div class="filters">${recherche("localRech", "Filtrer une URL…")}</div>${tableau("local", [
+            { k: "url", label: "Page (rapprochée par URL)", f: (l) => lien(l.url) },
+            { k: "clicsLocal", label: "Clics fiche", n: 1, f: (l) => `<b>${fmt(l.clicsLocal)}</b>` }, { k: "varLocal", label: "Évol.", n: 1, f: (l) => varHtml(l.varLocal) },
+            { k: "impressionsLocal", label: "Impr. fiche", n: 1, f: (l) => fmt(l.impressionsLocal) }, { k: "positionLocal", label: "Pos. fiche", n: 1, f: (l) => pos(l.positionLocal) },
+            { k: "clicsOrganique", label: "Clics organiques", n: 1, f: (l) => fmt(l.clicsOrganique) }, { k: "positionOrganique", label: "Pos. orga.", n: 1, f: (l) => pos(l.positionOrganique) },
+            { k: "partLocal", label: "Part locale", n: 1, f: (l) => `<span class="mono">${pct(l.partLocal, 0)}</span>` },
+            { k: "status", label: "HTTP", n: 1, f: (l) => l.status == null ? '<span class="faint">non crawlée</span>' : `<span class="${l.status >= 400 ? "down" : "faint"}">${l.status}</span>` },
+            { k: "liensEntrants", label: "Liens ent.", n: 1, f: (l) => fmt(l.liensEntrants) },
+          ], lignes)}`
+        : vue === "requetes" ? `<p class="sub">Recherches pour lesquelles un lien de fiche Google est apparu (souvent le Local Pack) et sa position.</p>${tableau("locreq", [
+            { k: "requete", label: "Requête", f: (r) => `<b>${esc(r.requete)}</b><div>${lien(r.page)}</div>` },
+            { k: "clicks", label: "Clics", n: 1, f: (r) => fmt(r.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (r) => fmt(r.impressions) },
+            { k: "ctr", label: "CTR", n: 1, f: (r) => pct(r.ctr) }, { k: "position", label: "Pos.", n: 1, f: (r) => pos(r.position) },
+          ], d.requetes)}`
+        : vue === "sansfiche" ? `<p class="sub">Pages parking qui font au moins 20 clics organiques mais ne reçoivent aucun clic depuis une fiche Google : fiche manquante, fermée, ou dont le lien « site web » ne pointe pas vers cette URL.</p>${tableau("sansfiche", [{ k: "url", label: "Page", f: (l) => lien(l.url) }, { k: "clicks", label: "Clics organiques", n: 1, f: (l) => fmt(l.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (l) => fmt(l.impressions) }], d.pagesOrganiquesSansFiche, { vide: "Toutes les pages parking à trafic reçoivent aussi du trafic de fiche." })}`
+        : `<p class="sub">Fiches Yext actives sans page de destination : le bouton « site web » de la fiche ne mène pas vers la page du parking (premier lot lu, hors bornes de recharge).</p>${tableau("sanspage", [{ k: "nom", label: "Fiche" }, { k: "ville", label: "Ville" }, { k: "id", label: "ID Yext", f: (x) => `<span class="mono faint">${esc(x.id)}</span>` }], y?.fichesSansPage ?? [])}`}
+      </section></details>`;
+  },
+
+  async maillage() {
+    const d = await api(`/api/maillage?${q()}`);
+    if (!d) return `<section class="panel"><h2>Maillage interne</h2><p class="sub">Le maillage se calcule à partir du crawl.</p><button class="btn" onclick="changerVue('crawl')">Lancer un crawl</button></section>`;
+    const vue = f("mailVue", "toutes"), rech = f("mailRech", "").toLowerCase();
+    let l = vue === "renforcer" ? d.aRenforcer : vue === "gaspillage" ? d.gaspillage : d.pages;
+    if (rech) l = l.filter((x) => x.url.toLowerCase().includes(rech));
+    const s = d.stats;
+    return `
+      <section class="grid kpis">
+        ${kpi("Pages analysées", fmt(d.total), "", `crawl du ${new Date(d.date).toLocaleString("fr-FR")}`)}
+        ${kpi("Liens entrants (médiane)", fmt(s.entrantsMedian), "", "par page indexable")}
+        ${kpi("Liens sortants (médiane)", fmt(s.sortantsMedian), "", `${fmt(s.trop)} pages à plus de 150 liens`)}
+        ${kpi("Moins de 3 liens entrants", fmt(s.moinsDe3), "", `dont ${fmt(s.sansLien)} sans aucun lien`)}
+        ${kpi("À renforcer", fmt(d.aRenforcer.length), "", "trafic élevé, peu poussées par les liens")}
+        ${kpi("Popularité gaspillée", fmt(d.gaspillage.length), "", "très liées, aucun clic")}
+      </section>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("mailVue", [["toutes", "Toutes les pages"], ["renforcer", "À renforcer"], ["gaspillage", "Popularité gaspillée"]], "toutes")}
+        ${exportBtn("maillage", l, [["url", "URL"], ["entrants", "Liens entrants"], ["sortants", "Liens sortants"], ["profondeur", "Profondeur"], ["pagerank", "PageRank interne"], ["clicks", "Clics"], ["impressions", "Impressions"], ["position", "Position"], ["mots", "Mots"]])}</div>
+        <div class="filters">${recherche("mailRech", "Filtrer une URL…")}<span class="faint">${fmt(l.length)} pages · clic sur une URL pour voir ses liens</span></div>
+        ${tableau("mail", [
+          { k: "url", label: "Page", f: (x) => `<button class="rowlink" onclick="voirLiens(${attr(x.url)})" style="font-weight:500;max-width:440px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${esc(court(x.url))}</button>` },
+          { k: "entrants", label: "Liens entrants", n: 1, f: (x) => `<b class="${x.entrants < 3 ? "down" : ""}">${fmt(x.entrants)}</b>` },
+          { k: "sortants", label: "Liens sortants", n: 1, f: (x) => `<span class="${x.sortants > 150 ? "down" : ""}">${fmt(x.sortants)}</span>` },
+          { k: "profondeur", label: "Prof.", n: 1, f: (x) => x.profondeur == null ? "—" : fmt(x.profondeur) },
+          { k: "pagerank", label: "PageRank interne", n: 1, f: (x) => `<span style="display:inline-flex;gap:8px;align-items:center"><span class="track" style="width:70px;height:6px;border-radius:9px;background:#161F36;display:inline-block;overflow:hidden"><span style="display:block;height:100%;width:${x.pagerank}%;background:var(--accent)"></span></span><span class="mono">${x.pagerank}</span></span>` },
+          { k: "clicks", label: "Clics", n: 1, f: (x) => fmt(x.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (x) => fmt(x.impressions) },
+          { k: "position", label: "Pos.", n: 1, f: (x) => pos(x.position) },
+        ], l, { max: 500 })}</section>`;
+  },
+
+  async mots() {
+    const d = await api(`/api/mots-cles?${q()}`);
+    const s = d.segments;
+    const vue = f("motsVue", "requetes");
+    const tr = f("motsTranche", "toutes"), mq = f("motsMarque", "tous"), it = f("motsIntention", "toutes"), rech = f("motsRech", "").toLowerCase();
+    let req = d.requetes;
+    if (tr !== "toutes") req = req.filter((r) => r.tranche === tr);
+    if (mq !== "tous") req = req.filter((r) => (mq === "marque") === r.marque);
+    if (it !== "toutes") req = req.filter((r) => r.intention === it);
+    if (rech) req = req.filter((r) => r.requete.includes(rech) || (r.page || "").includes(rech));
+    const m = d.mouvements;
+    const mv = f("motsMvt", "sortiesTop3");
+    const noms = { entreesTop3: "Entrées Top 3", sortiesTop3: "Sorties Top 3", entreesTop10: "Entrées Top 10", sortiesTop10: "Sorties Top 10", nouvelles: "Nouvelles", perdues: "Perdues" };
+    const colsReq = [
+      { k: "requete", label: "Requête", f: (r) => `<b>${esc(r.requete)}</b>${r.marque ? ' <span class="chip">marque</span>' : ""}<div>${lien(r.page)}</div>` },
+      { k: "clicks", label: "Clics", n: 1, f: (r) => fmt(r.clicks) },
+      { k: "varClicks", label: "Évol.", n: 1, f: (r) => r.statut === "nouvelle" ? '<span class="chip good">nouvelle</span>' : varHtml(r.varClicks) },
+      { k: "impressions", label: "Impr.", n: 1, f: (r) => fmt(r.impressions) },
+      { k: "ctr", label: "CTR", n: 1, f: (r) => pct(r.ctr) },
+      { k: "position", label: "Pos.", n: 1, f: (r) => pos(r.position) },
+      { k: "deltaPosition", label: "Δ pos.", n: 1, f: (r) => deltaPos(r.deltaPosition) },
+      { k: "intention", label: "Intention", f: (r) => `<span class="faint">${r.intention}</span>` },
+      { k: "nbPages", label: "Pages", n: 1, f: (r) => r.nbPages > 1 ? `<span class="down">${r.nbPages} ⚠</span>` : fmt(r.nbPages) },
+    ];
+    const colsCluster = [
+      { k: "nom", label: "Cluster", f: (c) => `<details><summary><b style="color:var(--ink)">${esc(c.nom)}</b></summary>${c.principales.map((r) => `<div class="stat"><span>${esc(r.requete)}</span><span class="mono faint">${fmt(r.clicks)} · ${pos(r.position)}</span></div>`).join("")}</details>${lien(c.page)}` },
+      { k: "requetes", label: "Requêtes", n: 1, f: (c) => fmt(c.requetes) },
+      { k: "clicks", label: "Clics", n: 1, f: (c) => fmt(c.clicks) }, { k: "varClicks", label: "Évol.", n: 1, f: (c) => varHtml(c.varClicks) },
+      { k: "impressions", label: "Impr.", n: 1, f: (c) => fmt(c.impressions) }, { k: "position", label: "Pos.", n: 1, f: (c) => pos(c.position) },
+      { k: "top3", label: "Top 3", n: 1, f: (c) => fmt(c.top3) }, { k: "top10", label: "Top 10", n: 1, f: (c) => fmt(c.top10) },
+      { k: "potentiel", label: "Potentiel", n: 1, f: (c) => `<span class="mono up">+${fmt(c.potentiel)}</span>` },
+    ];
+    const listeVue = vue === "requetes" ? req : vue === "themes" ? d.clustersTheme : d.clustersPage;
+    return `
+      <section class="grid kpis">
+        ${kpi("Requêtes", fmt(d.total), "", `Du ${d.periode.debut} au ${d.periode.fin}`)}
+        ${d.distribution.map((x) => kpi(x.nom, fmt(x.nb), deltaNb(x.deltaNb), `${fmtK(x.clicks)} clics · ${pct(x.ctr)} CTR`)).join("")}
+      </section>
+      <div class="grid three">
+        <div class="panel"><h2>Marque / hors marque</h2><p class="sub">Termes : ${esc(d.marque.join(", "))} (modifiables en haut de page)</p>
+          ${[["Marque", s.marque], ["Hors marque", s.horsMarque]].map(([n, a]) => `<div class="stat"><span>${n}</span><span class="mono">${fmt(a.clicks)} clics ${varHtml(a.varClicks)} · ${fmt(a.nb)} req. · pos. ${pos(a.position)}</span></div>`).join("")}
+          <div style="margin-top:12px">${barres([{ label: "Marque", valeur: s.marque.clicks }, { label: "Hors marque", valeur: s.horsMarque.clicks }], { couleur: (x) => x.label === "Marque" ? "var(--link)" : "var(--accent)" })}</div></div>
+        <div class="panel"><h2>Intentions</h2><p class="sub">Classement par motifs (prix, réservation, comment, près de…)</p>
+          ${barres(d.intentions.map((x) => ({ label: x.intention, valeur: x.clicks, x })), { droite: (x) => `${fmtK(x.valeur)} · ${fmt(x.x.nb)} req.` })}</div>
+        <div class="panel"><h2>Longue traîne</h2><p class="sub">Clics selon la longueur de la requête</p>
+          ${barres(d.longueTraine.map((x) => ({ label: x.classe, valeur: x.clicks, x })), { couleur: () => "var(--link)", droite: (x) => `${fmtK(x.valeur)} · pos. ${pos(x.x.position)}` })}</div>
+        <div class="panel"><h2>Appareils</h2>${d.appareils.map((a) => `<div class="stat"><span>${esc(a.appareil)}</span><span class="mono">${fmt(a.clicks)} ${varHtml(a.varClicks)} · ${pct(a.ctr)} · pos. ${pos(a.position)}</span></div>`).join("")}</div>
+        <div class="panel"><h2>Pays</h2><div class="scroll" style="max-height:220px">${d.pays.map((a) => `<div class="stat"><span>${esc(a.pays.toUpperCase())}</span><span class="mono">${fmt(a.clicks)} · pos. ${pos(a.position)}</span></div>`).join("")}</div></div>
+        <div class="panel"><h2>Mouvements</h2><p class="sub">Par rapport à la période précédente</p>${Object.entries(noms).map(([k, n]) => `<div class="stat"><span>${n}</span><span class="mono ${/sorties|perdues/.test(k) ? "down" : "up"}">${fmt(m[k].length)}${m[k].length >= 100 ? "+" : ""}</span></div>`).join("")}</div>
+      </div>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2>Mouvements de positions</h2>${segment("motsMvt", Object.entries(noms), "sortiesTop3")}</div>
+        <div style="margin-top:12px">${mv === "perdues" ? tableau("perdues", [{ k: "requete", label: "Requête" }, { k: "clicksPrec", label: "Clics avant", n: 1, f: (r) => fmt(r.clicksPrec) }, { k: "positionPrec", label: "Pos. avant", n: 1, f: (r) => pos(r.positionPrec) }], m.perdues)
+          : tableau("mvt", colsReq, m[mv])}</div></section>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          ${segment("motsVue", [["requetes", "Requêtes"], ["themes", "Clusters thématiques"], ["pages", "Clusters par page"]], "requetes")}
+          ${vue === "requetes" ? exportBtn("requetes", req, [["requete", "Requête"], ["clicks", "Clics"], ["clicksPrec", "Clics période préc."], ["impressions", "Impressions"], ["ctr", "CTR"], ["position", "Position"], ["positionPrec", "Position préc."], ["tranche", "Tranche"], ["marque", "Marque"], ["intention", "Intention"], ["page", "Page principale"], ["nbPages", "Nb pages"]])
+            : exportBtn("clusters", listeVue, [["nom", "Cluster"], ["page", "Page"], ["requetes", "Requêtes"], ["clicks", "Clics"], ["varClicks", "Évolution"], ["impressions", "Impressions"], ["position", "Position"], ["top3", "Top 3"], ["top10", "Top 10"], ["potentiel", "Potentiel"]])}</div>
+        ${vue === "requetes" ? `<div class="filters">${recherche("motsRech", "Filtrer requête ou URL…")}
+          ${segment("motsTranche", [["toutes", "Toutes"], ["top3", "Top 3"], ["top10", "4-10"], ["top20", "11-20"], ["top50", "21-50"], ["au_dela", "50+"]], "toutes")}
+          ${segment("motsMarque", [["tous", "Tout"], ["horsmarque", "Hors marque"], ["marque", "Marque"]], "tous")}
+          ${segment("motsIntention", [["toutes", "Intentions"], ["transactionnelle", "Transac."], ["informationnelle", "Info"], ["locale", "Locale"], ["autre", "Autre"]], "toutes")}
+          <span class="faint">${fmt(req.length)} requêtes</span></div>${tableau("req", colsReq, req)}`
+          : `<p class="sub">${vue === "themes" ? "Chaque requête rejoint son mot discriminant le plus fort (lieu, service…) ; les mots présents dans plus de 25 % des requêtes sont ignorés. « Pages qui rankent » > 1 signale une dispersion." : "Requêtes regroupées selon la page que Google classe : équivalent gratuit d'un clustering par SERP."}</p>${tableau("clusters-" + vue, colsCluster, listeVue)}`}
+      </section>`;
+  },
+
+  async pages() {
+    const d = await api(`/api/pages?${q()}`);
+    const vue = f("pagesVue", "backlog");
+    const fl = f("pagesDrapeau", "tous"), ty = f("pagesType", "tous"), rech = f("pagesRech", "").toLowerCase();
+    let lignes = d.lignes;
+    if (fl !== "tous") lignes = lignes.filter((l) => l.drapeaux.includes(fl));
+    if (rech) lignes = lignes.filter((l) => l.url.toLowerCase().includes(rech) || (l.requetePrincipale || "").includes(rech));
+    const actions = ty === "tous" ? d.actions : d.actions.filter((a) => a.type === ty);
+    const types = [...new Set(d.actions.map((a) => a.type))];
+    return `
+      <section class="grid kpis">
+        ${kpi("Pages avec impressions", fmt(d.lignes.filter((l) => l.impressions > 0).length), "", `${fmt(d.totalLignes)} pages au total`)}
+        ${kpi("Actions", fmt(d.actions.length), "", `+${fmtK(d.gainTotal)} clics estimés`)}
+        ${Object.entries(d.drapeaux).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => kpi(k, fmt(v), "", "pages")).join("")}
+      </section>
+      ${!d.crawl ? `<div class="note">Sans crawl, seules les données Search Console sont croisées. <a href="#" onclick="changerVue('crawl');return false">Lancer un crawl</a> pour ajouter statut HTTP, profondeur, liens entrants, mots et détecter pages zombies et orphelines.</div>` : `<p class="faint" style="margin:0">Crawl du ${new Date(d.crawl.date).toLocaleString("fr-FR")} (${d.crawl.moteur})${d.pagespeed ? ` · PageSpeed du ${new Date(d.pagespeed).toLocaleString("fr-FR")}` : ""}</p>`}
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("pagesVue", [["backlog", "Backlog priorisé"], ["pages", "Toutes les pages"], ["repertoires", "Répertoires"], ["clusters", "Clusters de pages"]], "backlog")}
+        ${vue === "backlog" ? exportBtn("backlog", actions, [["score", "Score"], ["type", "Type"], ["titre", "Action"], ["page", "Page"], ["requete", "Requête"], ["gain", "Gain"], ["confiance", "Confiance"], ["effort", "Effort"], ["detail", "Détail"], ["commande", "Commande"]])
+          : vue === "pages" ? exportBtn("pages", lignes, [["url", "URL"], ["clicks", "Clics"], ["clicksPrec", "Clics préc."], ["impressions", "Impressions"], ["ctr", "CTR"], ["position", "Position"], ["requetePrincipale", "Requête principale"], ["nbRequetes", "Requêtes"], ["status", "HTTP"], ["indexable", "Indexable"], ["profondeur", "Profondeur"], ["liensEntrants", "Liens entrants"], ["mots", "Mots"], ["title", "Title"], ["cwv", "CWV"], [(l) => l.drapeaux.join(", "), "Drapeaux"]]) : ""}</div>
+        ${vue === "backlog" ? `<div class="filters">${segment("pagesType", [["tous", "Tous"], ...types.map((t) => [t, TYPES_ACTION[t] || t])], "tous")}</div>${tableActions(actions)}`
+        : vue === "pages" ? `<div class="filters">${recherche("pagesRech", "Filtrer URL ou requête…")}${segment("pagesDrapeau", [["tous", "Toutes"], ...Object.keys(d.drapeaux).map((k) => [k, `${k} (${d.drapeaux[k]})`])], "tous")}</div>
+          ${tableau("lignes", [
+            { k: "url", label: "Page", f: (l) => `${lien(l.url)}${l.requetePrincipale ? `<div class="faint" style="font-size:12px">« ${esc(l.requetePrincipale)} » · ${fmt(l.nbRequetes)} req.</div>` : ""}${l.drapeaux.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${l.drapeaux.map((x) => `<span class="tag ${/HTTP|zombie|noindex|mauvais|déclin/.test(x) ? "critique" : "important"}">${esc(x)}</span>`).join("")}</div>` : ""}` },
+            { k: "clicks", label: "Clics", n: 1, f: (l) => fmt(l.clicks) }, { k: "varClicks", label: "Évol.", n: 1, f: (l) => varHtml(l.varClicks) },
+            { k: "impressions", label: "Impr.", n: 1, f: (l) => fmt(l.impressions) }, { k: "ctr", label: "CTR", n: 1, f: (l) => l.impressions ? pct(l.ctr) : "—" },
+            { k: "position", label: "Pos.", n: 1, f: (l) => pos(l.position) }, { k: "top3", label: "Top 3", n: 1, f: (l) => fmt(l.top3) },
+            { k: "status", label: "HTTP", n: 1, f: (l) => l.status == null ? "—" : `<span class="${l.status >= 400 ? "down" : l.status >= 300 ? "" : "faint"}">${l.status}</span>` },
+            { k: "profondeur", label: "Prof.", n: 1, f: (l) => l.profondeur == null ? "—" : fmt(l.profondeur) },
+            { k: "liensEntrants", label: "Liens ent.", n: 1, f: (l) => fmt(l.liensEntrants) }, { k: "mots", label: "Mots", n: 1, f: (l) => fmt(l.mots) },
+            { k: "cwv", label: "CWV", f: (l) => noteChip(l.cwv) },
+            { label: "", f: (l) => l.requetePrincipale ? `<button class="copy" onclick="benchDepuis(${attr(l.requetePrincipale)},${attr(l.url)})">Benchmark</button>` : "" },
+          ], lignes)}`
+        : vue === "repertoires" ? tableau("reps", [
+            { k: "repertoire", label: "Répertoire", f: (r) => `<b>${esc(r.repertoire)}</b>` }, { k: "pages", label: "Pages", n: 1, f: (r) => fmt(r.pages) },
+            { k: "clicks", label: "Clics", n: 1, f: (r) => fmt(r.clicks) }, { k: "varClicks", label: "Évol. clics", n: 1, f: (r) => varHtml(r.varClicks) },
+            { k: "impressions", label: "Impr.", n: 1, f: (r) => fmt(r.impressions) }, { k: "varImpressions", label: "Évol. impr.", n: 1, f: (r) => varHtml(r.varImpressions) },
+            { k: "ctr", label: "CTR", n: 1, f: (r) => pct(r.ctr) }, { k: "position", label: "Pos.", n: 1, f: (r) => pos(r.position) },
+          ], d.repertoires)
+        : tableau("cpages", [
+            { k: "page", label: "Page", f: (c) => `${lien(c.page)}<div class="faint" style="font-size:12px">Sujet : ${esc(c.nom)}</div>` },
+            { k: "requetes", label: "Requêtes", n: 1, f: (c) => fmt(c.requetes) }, { k: "clicks", label: "Clics", n: 1, f: (c) => fmt(c.clicks) },
+            { k: "varClicks", label: "Évol.", n: 1, f: (c) => varHtml(c.varClicks) }, { k: "impressions", label: "Impr.", n: 1, f: (c) => fmt(c.impressions) },
+            { k: "position", label: "Pos.", n: 1, f: (c) => pos(c.position) }, { k: "top3", label: "Top 3", n: 1, f: (c) => fmt(c.top3) },
+            { k: "potentiel", label: "Potentiel", n: 1, f: (c) => `<span class="mono up">+${fmt(c.potentiel)}</span>` },
+          ], d.clusters)}
+      </section>`;
+  },
+
+  async alertes() {
+    const g = f("alGrav", "toutes");
+    const d = await api(`/api/alertes?${q(`&baisseGlobale=${f("alSeuil", "0.1")}&baissePage=${f("alPage", "0.3")}&recul=${f("alRecul", "3")}`)}`);
+    state.nbAlertes = d.total; dessinerNav();
+    const l = g === "toutes" ? d.alertes : d.alertes.filter((a) => a.gravite === g);
+    const c = (x) => d.alertes.filter((a) => a.gravite === x).length;
+    return `
+      <section class="grid kpis">${kpi("Critiques", fmt(c("critique")), "", "à traiter cette semaine")}${kpi("Importantes", fmt(c("important")), "")}${kpi("Informations", fmt(c("info")), "")}</section>
+      <section class="panel"><h2>Alertes <small>du ${d.periode.debut} au ${d.periode.fin}</small></h2><p class="sub">Baisse globale (total, marque, hors marque), rupture semaine sur semaine, anomalies &gt; 2σ, pages en baisse, sorties du Top 3 / Top 10, reculs de position, requêtes perdues, pages en erreur ou en noindex avec du trafic, Core Web Vitals mauvais.</p>
+        <div class="filters">${segment("alGrav", [["toutes", "Toutes"], ["critique", "Critiques"], ["important", "Importantes"], ["info", "Infos"]], "toutes")}
+          <label class="inline">Baisse globale ≥ <select onchange="filtre('alSeuil',this.value)">${["0.05", "0.1", "0.2"].map((v) => `<option value="${v}" ${f("alSeuil", "0.1") === v ? "selected" : ""}>${v * 100} %</option>`).join("")}</select></label>
+          <label class="inline">Baisse page ≥ <select onchange="filtre('alPage',this.value)">${["0.2", "0.3", "0.5"].map((v) => `<option value="${v}" ${f("alPage", "0.3") === v ? "selected" : ""}>${v * 100} %</option>`).join("")}</select></label>
+          <label class="inline">Recul ≥ <select onchange="filtre('alRecul',this.value)">${["2", "3", "5"].map((v) => `<option ${f("alRecul", "3") === v ? "selected" : ""}>${v}</option>`).join("")}</select> places</label></div>
+        ${listeAlertes(l.slice(0, 300))}</section>`;
+  },
+
+  async crawl() {
+    const d = await api(`/api/crawl?${qs()}`);
+    const t = state.taches.crawl;
+    const s = d?.synthese;
+    const vue = f("crawlVue", "problemes");
+    const st = f("crawlStatut", "tous"), rech = f("crawlRech", "").toLowerCase();
+    let pages = d?.pages ?? [];
+    if (st !== "tous") pages = pages.filter((p) => st === "nonidx" ? !p.indexable : String(p.status).startsWith(st[0]) && st.endsWith("xx"));
+    if (rech) pages = pages.filter((p) => p.url.toLowerCase().includes(rech) || (p.title || "").toLowerCase().includes(rech));
+    const lanceur = `<div class="filters">
+        <label class="inline">Pages max <select id="crawlMax">${[100, 250, 500, 1000, 2500].map((v) => `<option ${v === 500 ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label class="inline">Profondeur max <select id="crawlProf">${[3, 5, 10, 20].map((v) => `<option ${v === 10 ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label class="inline">Moteur <select id="crawlMoteur"><option value="auto">${state.sourcesInfo?.firecrawl ? "Firecrawl" : "Interne (gratuit)"}</option><option value="interne">Interne (gratuit)</option></select></label>
+        <button class="btn" ${t?.etat === "en_cours" ? "disabled" : ""} onclick="lancer('crawl','/api/crawl?${qs()}&max='+$('#crawlMax').value+'&profondeur='+$('#crawlProf').value+'&moteur='+$('#crawlMoteur').value)">Lancer le crawl</button>
+        <span class="faint">${state.sourcesInfo?.firecrawl ? "Firecrawl : 1 crédit par page." : "Ajoute FIRECRAWL_API_KEY dans .env pour crawler avec Firecrawl (rendu JavaScript)."}</span></div>
+      <div id="prog-crawl">${progresHtml(t)}</div>`;
+    if (!d) return `<section class="panel"><h2>Crawl du site</h2><p class="sub">Codes HTTP (200, 301, 404…), profondeur depuis l'accueil, liens internes entrants et sortants, liens cassés, redirections, orphelines, métadonnées, Hn, données structurées et volume de mots.</p>${lanceur}<div class="empty">Pas encore de crawl pour ce site.</div></section>`;
+    const cl = s.parClasse;
+    return `
+      <section class="grid kpis">
+        ${kpi("URL crawlées", fmt(s.total), d.complet === false ? '<span class="chip warn">limite atteinte</span>' : "", `${d.moteur} · ${new Date(d.date).toLocaleString("fr-FR")} · sitemap : ${fmt(d.urlsSitemap)} URL`)}
+        ${kpi("200", fmt(cl["2xx"]), "", `${fmt(s.indexables)} indexables`)}
+        ${kpi("Redirections", fmt(cl["3xx"]), "", `${fmt(s.liensVersRedirections.length)} liens internes vers des 3xx`)}
+        ${kpi("Erreurs 4xx / 5xx", `${fmt(cl["4xx"])} / ${fmt(cl["5xx"] + cl.erreur)}`, "", `${fmt(s.liensCasses.length)} liens cassés`)}
+        ${kpi("Profondeur moyenne", pos(s.profondeurMoyenne), "", `${fmt(s.orphelines.length)} orphelines`)}
+        ${kpi("Mots (médiane)", fmt(s.mots.median), "", `moyenne ${fmt(s.mots.moyenne)}`)}
+      </section>
+      <section class="panel"><h2>Relancer le crawl</h2>${lanceur}</section>
+      <div class="grid three">
+        <div class="panel"><h2>Codes HTTP</h2>${barres(Object.entries(s.parCode).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => ({ label: k === "0" ? "injoignable" : k, valeur: v })), { couleur: (x) => /^2/.test(x.label) ? "var(--accent)" : /^3/.test(x.label) ? "var(--warn)" : "var(--bad)" })}</div>
+        <div class="panel"><h2>Profondeur</h2><p class="sub">Clics depuis l'accueil (pages 200)</p>${barres(s.profondeurs.map((x) => ({ label: x.profondeur, valeur: x.pages })), { couleur: (x) => /5|non/.test(x.label) ? "var(--bad)" : x.label === "4" ? "var(--warn)" : "var(--link)" })}</div>
+        <div class="panel"><h2>Volume de mots</h2><p class="sub">Pages indexables</p>${barres(s.mots.tranches.map((x) => ({ label: x.tranche, valeur: x.pages })), { couleur: (x) => x.label === "< 300" ? "var(--bad)" : "var(--accent)" })}
+          ${Object.keys(s.nonIndexables).length ? `<div style="margin-top:14px"><span class="lbl">Non indexables</span>${Object.entries(s.nonIndexables).map(([k, v]) => `<div class="stat"><span>${esc(k)}</span><span class="mono">${fmt(v)}</span></div>`).join("")}</div>` : ""}</div>
+      </div>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("crawlVue", [["problemes", `Problèmes (${d.problemes.length})`], ["pages", "Pages"], ["casses", `Liens cassés (${s.liensCasses.length})`], ["redir", `Liens vers 3xx (${s.liensVersRedirections.length})`], ["orph", `Orphelines (${s.orphelines.length})`]], "problemes")}
+        ${vue === "pages" ? exportBtn("crawl", pages, [["url", "URL"], ["status", "HTTP"], ["redirection", "Redirige vers"], ["indexable", "Indexable"], ["raisonNonIndexable", "Raison"], ["profondeur", "Profondeur"], ["liensEntrants", "Liens entrants"], ["liensSortants", "Liens sortants"], ["title", "Title"], ["titleLength", "Long. title"], ["metaDescription", "Meta description"], ["metaLength", "Long. meta"], [(p) => p.h1.join(" | "), "H1"], ["h2", "H2"], ["h3", "H3"], ["wordCount", "Mots"], [(p) => p.schemas.join(", "), "Schémas"], ["canonical", "Canonical"], ["lang", "Langue"], ["hreflang", "hreflang"], ["imagesSansAlt", "Images sans alt"], ["tempsMs", "Temps (ms)"], ["dansSitemap", "Sitemap"]])
+          : vue === "casses" ? exportBtn("liens-casses", s.liensCasses, [["source", "Page source"], ["cible", "Lien cassé"], ["status", "HTTP"]]) : ""}</div>
+        ${vue === "problemes" ? (d.problemes.length ? `<table><tr><th>Gravité</th><th>Problème</th><th class="n">Pages</th><th></th></tr>
+          ${d.problemes.map((p) => `<tr><td><span class="tag ${p.gravite}">${p.gravite}</span></td><td>${esc(p.message)}${p.urls.length ? `<details><summary>voir les pages</summary>${p.urls.slice(0, 80).map(lien).join("")}</details>` : ""}</td>
+            <td class="n">${fmt(p.urls.length)}</td><td>${btn(`/seo-pilote:seo-technique ${site()} ${p.code}`, "Corriger avec Claude")}</td></tr>`).join("")}</table>` : '<div class="empty">Aucun problème détecté.</div>')
+        : vue === "pages" ? `<div class="filters">${recherche("crawlRech", "Filtrer URL ou title…")}${segment("crawlStatut", [["tous", "Toutes"], ["2xx", "2xx"], ["3xx", "3xx"], ["4xx", "4xx"], ["5xx", "5xx"], ["nonidx", "Non indexables"]], "tous")}<span class="faint">${fmt(pages.length)} URL</span></div>
+          ${tableau("crawlpages", [
+            { k: "url", label: "URL", f: (p) => `${lien(p.url)}<div class="faint" style="font-size:12px;max-width:440px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title || "(sans title)")}</div>${p.redirection ? `<div class="faint" style="font-size:12px">→ ${esc(court(p.redirection))}</div>` : ""}` },
+            { k: "status", label: "HTTP", n: 1, f: (p) => `<span class="${p.status >= 400 || !p.status ? "down" : p.status >= 300 ? "" : "faint"}">${p.status || "—"}</span>` },
+            { k: "indexable", label: "Index.", f: (p) => p.indexable ? '<span class="up">oui</span>' : `<span class="down">${esc(p.raisonNonIndexable || "non")}</span>` },
+            { k: "profondeur", label: "Prof.", n: 1, f: (p) => p.profondeur == null ? '<span class="down">—</span>' : fmt(p.profondeur) },
+            { k: "liensEntrants", label: "Liens ent.", n: 1, f: (p) => fmt(p.liensEntrants) }, { k: "liensSortants", label: "Sortants", n: 1, f: (p) => fmt(p.liensSortants) },
+            { k: "wordCount", label: "Mots", n: 1, f: (p) => `<span class="${p.wordCount < 300 && p.indexable ? "down" : ""}">${fmt(p.wordCount)}</span>` },
+            { k: "titleLength", label: "Title", n: 1, f: (p) => `<span class="${p.titleLength > 60 || p.titleLength < 30 ? "down" : ""}">${fmt(p.titleLength)}</span>` },
+            { k: "metaLength", label: "Meta", n: 1, f: (p) => `<span class="${!p.metaLength || p.metaLength > 160 ? "down" : ""}">${fmt(p.metaLength)}</span>` },
+            { k: "h2", label: "H1/H2", n: 1, f: (p) => `<span class="${p.h1.length !== 1 ? "down" : ""}">${p.h1.length}</span>/${p.h2}` },
+            { k: "schemas", label: "Schémas", tri: (p) => p.schemas.length, f: (p) => `<span class="faint" style="font-size:12px">${esc(p.schemas.slice(0, 3).join(", ") || "—")}</span>` },
+          ], pages, { max: 500 })}`
+        : vue === "casses" ? tableau("casses", [{ k: "source", label: "Page source", f: (l) => lien(l.source) }, { k: "cible", label: "Lien cassé", f: (l) => lien(l.cible) }, { k: "status", label: "HTTP", n: 1, f: (l) => `<span class="down">${l.status || "injoignable"}</span>` }], s.liensCasses, { vide: "Aucun lien cassé." })
+        : vue === "redir" ? tableau("redir", [{ k: "source", label: "Page source", f: (l) => lien(l.source) }, { k: "cible", label: "Lien", f: (l) => lien(l.cible) }, { k: "finale", label: "URL finale à utiliser", f: (l) => lien(l.finale) }], s.liensVersRedirections, { vide: "Aucun lien vers une redirection." })
+        : `<p class="sub">Pages du sitemap qu'aucun lien interne ne pointe : Google les découvre mal et elles reçoivent peu de popularité interne.</p>${s.orphelines.slice(0, 300).map(lien).join("") || '<div class="empty">Aucune page orpheline.</div>'}`}
+      </section>`;
+  },
+
+  async vitesse() {
+    const d = await api(`/api/pagespeed?${qs()}`);
+    const t = state.taches.pagespeed;
+    const lanceur = `<div class="filters">
+      <label class="inline">Pages (top clics) <select id="psiN">${[5, 10, 20, 30, 50].map((v) => `<option ${v === 10 ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label class="inline">Appareils <select id="psiS"><option value="mobile">Mobile</option><option value="mobile,desktop">Mobile + ordinateur</option></select></label>
+      <button class="btn" ${t?.etat === "en_cours" ? "disabled" : ""} onclick="lancer('pagespeed','/api/pagespeed?${qs()}&n='+$('#psiN').value+'&strategies='+$('#psiS').value)">Analyser</button>
+      <span class="faint">API PageSpeed Insights gratuite, 10 à 30 s par page${state.sourcesInfo?.cleePagespeed ? "" : " · ajoute PAGESPEED_API_KEY dans .env si Google limite le débit"}.</span></div>
+      <div id="prog-pagespeed">${progresHtml(t)}</div>`;
+    if (!d) return `<section class="panel"><h2>Core Web Vitals</h2><p class="sub">Données terrain (CrUX : 75e centile des vrais utilisateurs Chrome sur 28 jours) et labo (Lighthouse) des pages qui font le plus de clics.</p>${lanceur}<div class="empty">Pas encore d'analyse pour ce site.</div></section>`;
+    const res = d.resultats;
+    const orig = res.find((r) => r.terrainOrigine)?.terrainOrigine;
+    const s = f("psiStrat", "mobile");
+    const l = res.filter((r) => r.strategie === s);
+    const m = (t, k) => t?.[k] ? `<span class="mono">${k === "cls" ? t[k].p75.toLocaleString("fr-FR") : ms(t[k].p75)}</span> ${noteChip(t[k].note)}` : '<span class="faint">—</span>';
+    const opps = new Map();
+    for (const r of l) for (const o of r.opportunites) { const x = opps.get(o.id) || { titre: o.titre, pages: 0, gain: 0 }; x.pages++; x.gain += o.gainMs; opps.set(o.id, x); }
+    return `
+      <section class="grid kpis">
+        ${kpi("Core Web Vitals (origine)", orig?.global ? NOTE[orig.global][1] : "—", "", "75e centile, utilisateurs Chrome, 28 j")}
+        ${kpi("LCP origine", orig?.lcp ? ms(orig.lcp.p75) : "—", orig?.lcp ? noteChip(orig.lcp.note) : "", "≤ 2,5 s = bon")}
+        ${kpi("INP origine", orig?.inp ? ms(orig.inp.p75) : "—", orig?.inp ? noteChip(orig.inp.note) : "", "≤ 200 ms = bon")}
+        ${kpi("CLS origine", orig?.cls ? orig.cls.p75.toLocaleString("fr-FR") : "—", orig?.cls ? noteChip(orig.cls.note) : "", "≤ 0,1 = bon")}
+        ${kpi("Score Lighthouse moyen", l.filter((r) => r.score != null).length ? fmt(Math.round(l.reduce((a, r) => a + (r.score ?? 0), 0) / l.filter((r) => r.score != null).length)) : "—", "", `${l.length} pages · ${s}`)}
+      </section>
+      <section class="panel"><h2>Relancer l'analyse <small>dernière : ${new Date(d.date).toLocaleString("fr-FR")}</small></h2>${lanceur}</section>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2>Pages</h2>${segment("psiStrat", [["mobile", "Mobile"], ["desktop", "Ordinateur"]], "mobile")}</div>
+        ${tableau("psi", [
+          { k: "url", label: "Page", f: (r) => `${lien(r.url)}${r.erreur ? `<div class="down" style="font-size:12px">${esc(r.erreur)}</div>` : ""}${!r.terrainPage && !r.erreur ? '<div class="faint" style="font-size:12px">pas assez de trafic pour des données terrain par page</div>' : ""}` },
+          { k: "score", label: "Score", n: 1, f: (r) => r.score == null ? "—" : `<b class="mono" style="color:${r.score >= 90 ? "var(--accent)" : r.score >= 50 ? "var(--warn)" : "var(--bad)"}">${r.score}</b>` },
+          { label: "LCP terrain", f: (r) => m(r.terrainPage, "lcp") }, { label: "INP terrain", f: (r) => m(r.terrainPage, "inp") }, { label: "CLS terrain", f: (r) => m(r.terrainPage, "cls") },
+          { label: "Labo LCP / TBT / CLS", n: 1, f: (r) => `<span class="mono">${ms(r.labo.lcp)} · ${ms(r.labo.tbt)} · ${r.labo.cls ?? "—"}</span>` },
+          { label: "Optimisations", f: (r) => r.opportunites.slice(0, 3).map((o) => `<div style="font-size:12px">${esc(o.titre)} <span class="faint">−${ms(o.gainMs)}</span></div>`).join("") || '<span class="faint">—</span>' },
+        ], l)}</section>
+      ${opps.size ? `<section class="panel"><h2>Optimisations les plus rentables</h2><p class="sub">Somme des gains estimés par Lighthouse sur les pages analysées</p>
+        ${barres([...opps.values()].sort((a, b) => b.gain - a.gain).slice(0, 10).map((x) => ({ label: x.titre, valeur: x.gain, x })), { couleur: () => "var(--warn)", droite: (x) => `${ms(x.valeur)} · ${x.x.pages} pages` })}
+        ${btn(`/seo-pilote:seo-technique ${site()} vitesse`, "Corriger avec Claude", "btn sec")}</section>` : ""}`;
+  },
+
+  async bench() {
+    const liste = await api(`/api/benchmarks?${qs()}`);
+    const sel = liste.find((b) => b.requete === f("benchVoir", liste[0]?.requete)) ?? liste[0];
+    const prof = (p, moi) => p ? `<tr style="${moi ? "background:#121A2F" : ""}"><td>${moi ? '<span class="chip good">ma page</span> ' : `<span class="mono faint">#${p.position}</span> `}${lien(p.url)}<div class="faint" style="font-size:12px;max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title)}</div></td>
+      <td class="n">${fmt(p.mots)}</td><td class="n">${p.h2} / ${p.h3}</td><td class="n">${fmt(p.images)}</td><td class="n">${fmt(p.liensInternes)}</td><td>${p.faq ? "✓" : "—"}</td><td>${p.tableaux ? "✓" : "—"}</td>
+      <td style="font-size:12px" class="faint">${esc(p.schemas.slice(0, 4).join(", ") || "—")}</td><td class="n">${pct(p.couverture, 0)}</td><td>${p.requeteDansTitle ? "✓" : "—"}</td></tr>` : "";
+    return `
+      <section class="panel"><h2>Benchmark concurrentiel</h2><p class="sub">Firecrawl récupère la SERP, scrape le top 3 et compare volume de mots, Hn, FAQ, tableaux, données structurées, maillage, images, présence de la requête dans le title et couverture sémantique (termes communs aux concurrents).</p>
+        <div class="filters"><input id="benchReq" placeholder="Requête (ex. parking gare de lyon)" value="${esc(f("benchReq", ""))}" style="min-width:280px">
+          <input id="benchPage" placeholder="Ma page (URL, facultatif)" value="${esc(f("benchPage", ""))}" style="min-width:320px">
+          <button class="btn" id="benchGo" onclick="lancerBench()">Benchmarker</button>
+          <span class="faint">${state.sourcesInfo?.firecrawl ? "≈ 4 à 7 crédits Firecrawl." : "Nécessite FIRECRAWL_API_KEY dans .env."}</span></div>
+        <div class="note">Astuce : depuis <a href="#" onclick="changerVue('pages');filtre('pagesVue','pages');return false">Pages</a>, le bouton « Benchmark » pré-remplit la requête principale de la page. ${btn(`/seo-pilote:seo-concurrents ${site()}`, "Ou analyser avec Claude (Firecrawl MCP)")}</div></section>
+      ${sel ? `<section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2>« ${esc(sel.requete)} » <small>${new Date(sel.date).toLocaleString("fr-FR")}</small></h2></div>
+          ${liste.length > 1 ? `<select onchange="filtre('benchVoir',this.value)">${liste.map((b) => `<option ${b === sel ? "selected" : ""}>${esc(b.requete)}</option>`).join("")}</select>` : ""}</div>
+        <div class="scroll" style="margin-top:10px"><table><tr><th>Page</th><th class="n">Mots</th><th class="n">H2 / H3</th><th class="n">Images</th><th class="n">Liens int.</th><th>FAQ</th><th>Tableau</th><th>Schémas</th><th class="n">Couverture</th><th>Requête dans title</th></tr>
+          ${prof(sel.maPage, true)}${sel.concurrents.map((p) => prof(p)).join("")}
+          <tr><td class="faint">Médiane top 3</td><td class="n mono">${fmt(sel.mediane.mots)}</td><td class="n mono">${sel.mediane.h2} / ${sel.mediane.h3}</td><td class="n mono">${fmt(sel.mediane.images)}</td><td class="n mono">${fmt(sel.mediane.liensInternes)}</td><td></td><td></td><td></td><td class="n mono">${pct(sel.mediane.couverture, 0)}</td><td></td></tr></table></div>
+        <div class="grid two" style="margin-top:16px">
+          <div><span class="lbl">Écarts à combler</span>${sel.ecarts.map((e) => `<div class="stat"><span>• ${esc(e)}</span></div>`).join("") || '<p class="muted">Aucun écart majeur.</p>'}</div>
+          <div><span class="lbl">Termes du top 3 absents de ta page</span><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${sel.termesManquants.map((t) => `<span class="chip">${esc(t)}</span>`).join("") || '<span class="muted">—</span>'}</div></div>
+        </div>
+        <div style="margin-top:14px">${btn(`/seo-pilote:seo-opportunites contenu ${sel.maPage?.url || site()} "${sel.requete}"`, "Optimiser la page avec Claude", "btn")}</div></section>` : ""}`;
+  },
+
+  async perf() {
+    const d = await api(`/api/performance?${q()}`);
+    const g = d.google, b = d.bing;
+    return `
+      <p class="muted" style="margin:0">Du ${d.periode.debut} au ${d.periode.fin}, comparé à la période précédente.</p>
+      <div class="grid kpis">
+        ${kpi("Clics Google", fmt(g.clicks), varHtml(g.varClicks))}
+        ${kpi("Impressions Google", fmt(g.impressions), varHtml(g.varImpressions))}
+        ${kpi("CTR moyen", pct(g.ctr, 2), varHtml(g.varCtr))}
+        ${kpi("Position moyenne", g.position.toLocaleString("fr-FR"), deltaPos(g.deltaPosition))}
+        ${b ? kpi("Clics Bing", fmt(b.clicks), varHtml(b.varClicks)) + kpi("Impressions Bing", fmt(b.impressions), varHtml(b.varImpressions)) : kpi("Bing", "—", "", "site absent de Bing Webmaster")}
+      </div>
+      <div class="card"><h2>Clics Google par jour</h2>
+        ${ligne([{ nom: "Période", couleur: "var(--accent)", points: g.serie }, { nom: "Période précédente", couleur: "var(--series2)", pointille: true, points: g.seriePrecedente }])}
+      </div>
+      ${b && b.serie.length ? `<div class="card"><h2>Clics Bing par jour</h2>${ligne([{ nom: "Bing", couleur: "var(--warn)", points: b.serie }], { h: 150 })}</div>` : ""}
+      <div class="grid two">
+        <div class="card"><h2>Top pages</h2><table><tr><th>Page</th><th class="n">Clics</th><th class="n">Impr.</th><th class="n">Pos.</th></tr>
+          ${d.topPages.map((r) => `<tr><td>${lien(r.page)}</td><td class="n">${fmt(r.clicks)}</td><td class="n">${fmt(r.impressions)}</td><td class="n">${pos(r.position)}</td></tr>`).join("")}</table></div>
+        <div class="card"><h2>Top requêtes</h2><table><tr><th>Requête</th><th class="n">Clics</th><th class="n">CTR</th><th class="n">Pos.</th></tr>
+          ${d.topRequetes.map((r) => `<tr><td>${esc(r.requete)}</td><td class="n">${fmt(r.clicks)}</td><td class="n">${pct(r.ctr)}</td><td class="n">${pos(r.position)}</td></tr>`).join("")}</table></div>
+      </div>`;
+  },
+
+  async opp() {
+    const d = await api(`/api/opportunites?${q()}`);
+    const noms = { ctr_faible: "CTR faible (meta)", page_2: "Page 2 (contenu, maillage)", cannibalisation: "Cannibalisation", declin: "Pages en déclin" };
+    const liste = state.filtreOpp === "tous" ? d.opportunites : d.opportunites.filter((o) => o.type === state.filtreOpp);
+    return `
+      <div class="grid kpis">
+        ${Object.entries(d.resume).map(([k, v]) => kpi(noms[k], fmt(v), "")).join("")}
+        ${kpi("Clics à gagner (estimation)", "+" + fmt(d.gainEstime), "", "par période")}
+      </div>
+      <div class="card">
+        <div class="filters"><div class="seg">${["tous", ...Object.keys(noms)].map((t) => `<button onclick="state.filtreOpp='${t}';render(false)" class="${state.filtreOpp === t ? "on" : ""}">${t === "tous" ? "Tout" : noms[t]}</button>`).join("")}</div></div>
+        <p class="sub">Triées par clics supplémentaires estimés. Le bouton copie la commande à coller dans Claude Code : il analyse les concurrents avec Firecrawl, propose la correction et la publie après ta validation.</p>
+        <div class="scroll"><table>
+          <tr><th>Type</th><th>Requête / page</th><th class="n">Impr.</th><th class="n">CTR</th><th class="n">Pos.</th><th class="n">Gain</th><th>Action</th><th></th></tr>
+          ${liste.map((o) => `<tr>
+            <td><span class="tag">${noms[o.type]}</span></td>
+            <td>${o.requete ? `<b>${esc(o.requete)}</b>` : ""}${o.page ? lien(o.page) : ""}${(o.pages || []).map(lien).join("")}</td>
+            <td class="n">${fmt(o.impressions)}</td><td class="n">${o.type === "declin" ? "—" : pct(o.ctr)}</td><td class="n">${pos(o.position)}</td>
+            <td class="n up">+${fmt(o.priorite)}</td><td style="max-width:360px" class="muted">${esc(o.action)}</td>
+            <td>${btn(o.commande, "Copier la commande")}</td></tr>`).join("") || `<tr><td colspan="8" class="empty">Aucune opportunité sur ce filtre.</td></tr>`}
+        </table></div>
+      </div>`;
+  },
+
+  async disc() {
+    const d = await api(`/api/discover?${q()}`);
+    const cmd = `/seo-pilote:seo-article-complet discover ${site()}`;
+    return `
+      <div class="grid kpis">
+        ${kpi("Clics Discover", fmt(d.clicks), varHtml(d.varClicks))}
+        ${kpi("Impressions Discover", fmt(d.impressions), "")}
+        ${kpi("CTR Discover", pct(d.ctr, 2), "")}
+      </div>
+      <div class="card"><h2>Ce qu'il faut savoir</h2>
+        <p class="muted">Google ne propose aucun moyen de « pousser » une page dans Discover : il choisit lui-même, selon les centres d'intérêt des mobinautes. Ce qu'on contrôle, ce sont les conditions d'éligibilité, vérifiées pour chaque article par le script <code>discover-check</code> : grande image d'au moins 1200 px de large, balise <code>max-image-preview:large</code>, titre fidèle au contenu (pas de clickbait), date de publication et auteur, sujet frais. L'onglet Audit technique liste les pages qui ne les respectent pas.</p>
+        ${btn(cmd, "Copier la commande « audit Discover »")}
+      </div>
+      ${d.serie.length ? `<div class="card"><h2>Clics Discover par jour</h2>${ligne([{ nom: "Discover", couleur: "var(--accent)", points: d.serie }])}</div>` : `<div class="card empty">Aucune donnée Discover sur la période : le site n'y apparaît pas encore (ou pas assez pour que Google publie les chiffres).</div>`}
+      ${d.pages.length ? `<div class="card"><h2>Pages vues dans Discover</h2><div class="scroll"><table><tr><th>Page</th><th class="n">Clics</th><th class="n">Impr.</th><th class="n">CTR</th></tr>
+        ${d.pages.map((r) => `<tr><td>${lien(r.page)}</td><td class="n">${fmt(r.clicks)}</td><td class="n">${fmt(r.impressions)}</td><td class="n">${pct(r.ctr)}</td></tr>`).join("")}</table></div></div>` : ""}`;
+  },
+
+  async tech() {
+    const d = await api(`/api/technique?${qs()}`);
+    const c = d.crawlBing, a = d.audit;
+    return `
+      ${c ? `<div class="grid kpis">
+        ${kpi("Pages explorées par Bing (30 j)", fmt(c.sur30jours.pagesExplorees), "")}
+        ${kpi("Erreurs d'exploration (30 j)", fmt(c.sur30jours.erreurs), "")}
+        ${kpi("Erreurs 4xx / 5xx", fmt(c.sur30jours.code4xx) + " / " + fmt(c.sur30jours.code5xx), "")}
+        ${kpi("Bloquées par robots.txt", fmt(c.sur30jours.bloqueesRobots), "")}
+        ${kpi("Pages dans l'index Bing", fmt(c.dernier?.inIndex), "")}
+      </div>` : `<div class="card muted">Pas de données d'exploration Bing pour ce site.</div>`}
+      <div class="card">
+        <h2>Audit rapide du sitemap ${a ? `<small>du ${new Date(a.date).toLocaleString("fr-FR")} · ${a.pages.length} pages sur ${fmt(a.urlsSitemap)} dans le sitemap</small>` : ""}</h2>
+        <p class="sub">Échantillon du sitemap, sans suivre les liens. Pour la profondeur, les liens cassés et les orphelines, utilise l'onglet <a href="#" onclick="changerVue('crawl');return false">Crawl</a>.</p>
+        <div class="filters">
+          <label class="inline">Pages à analyser <select id="maxAudit"><option>50</option><option selected>100</option><option>250</option><option>500</option></select></label>
+          <button class="btn" id="lancerAudit" onclick="lancerAudit()">Lancer l'audit</button>
+        </div>
+        ${a ? (a.problemes.length ? `<table><tr><th>Gravité</th><th>Problème</th><th class="n">Pages</th><th></th></tr>
+          ${a.problemes.map((p) => `<tr><td><span class="tag ${p.gravite}">${p.gravite}</span></td><td>${esc(p.message)}
+            ${p.urls.length ? `<details><summary>voir les pages</summary>${p.urls.slice(0, 50).map(lien).join("")}</details>` : ""}</td>
+            <td class="n">${fmt(p.urls.length)}</td>
+            <td>${btn(`/seo-pilote:seo-technique ${site()} ${p.code}`, "Corriger avec Claude")}</td></tr>`).join("")}</table>`
+          : '<div class="empty">Aucun problème détecté sur l\'échantillon.</div>') : '<div class="empty">Pas encore d\'audit pour ce site.</div>'}
+      </div>`;
+  },
+
+  async conc() {
+    const d = await api(`/api/concurrents?${qs()}`);
+    const cmd = `/seo-pilote:seo-concurrents ${site()}`;
+    if (!d) return `<div class="card"><h2>Comparaison avec les concurrents (Claude)</h2>
+      <p class="muted">Cette analyse utilise Firecrawl via Claude : il récupère la SERP de tes requêtes principales, scrape les pages du top 3 et compare title, meta description, Hn, longueur, FAQ, données structurées et liens internes avec tes pages.</p>
+      ${btn(cmd, "Copier la commande", "btn")}</div>`;
+    return `<div class="card"><h2>Comparaison avec les concurrents <small>du ${new Date(d.date).toLocaleString("fr-FR")}</small></h2>
+      ${btn(cmd, "Relancer l'analyse")}
+      <div class="scroll" style="margin-top:12px"><table>
+        <tr><th>Requête</th><th>Ma page</th><th class="n">Ma pos.</th><th>Concurrents du top 3</th><th class="n">Mots (moi / top 3)</th><th>Écarts</th><th></th></tr>
+        ${(d.requetes || []).map((r) => `<tr><td><b>${esc(r.requete)}</b></td><td>${r.maPage ? lien(r.maPage) : '<span class="muted">aucune</span>'}</td>
+          <td class="n">${pos(r.maPosition)}</td><td>${(r.concurrents || []).map((c) => lien(c.url)).join("")}</td>
+          <td class="n">${fmt(r.mesMots)} / ${fmt(r.motsTop3)}</td>
+          <td style="max-width:380px" class="muted">${(r.ecarts || []).map((e) => "• " + esc(e)).join("<br>")}</td>
+          <td>${btn(`/seo-pilote:seo-opportunites contenu ${r.maPage || site()} "${r.requete}"`, "Optimiser")}</td></tr>`).join("")}
+      </table></div></div>`;
+  },
+
+  async cont() {
+    const d = await api(`/api/contenu?${qs()}`);
+    const etapes = [["brief", "Brief"], ["redige", "Rédigé"], ["visuel", "Visuel"], ["publie", "Publié"], ["facebook", "Facebook"], ["discover", "Discover OK"]];
+    const cmd = `/seo-pilote:seo-article-complet ${site()} "sujet ou requête"`;
+    return `
+      <div class="card"><h2>Créer ou optimiser un article de bout en bout</h2>
+        <p class="muted">Brief à partir des concurrents (Firecrawl) → rédaction optimisée → visuel aux couleurs du site → publication WordPress → post Facebook → vérification Discover. Claude s'arrête pour validation avant chaque publication.</p>
+        <div class="filters"><input id="sujet" placeholder="Sujet ou requête cible" style="min-width:320px">
+          <button class="btn" onclick="copierArticle()">Copier la commande</button></div>
+        <p class="muted">Charte graphique : ${d.charte ? `<span style="display:inline-flex;gap:4px;vertical-align:middle">${(d.charte.couleurs || []).slice(0, 6).map((c) => `<span title="${esc(c)}" style="width:16px;height:16px;border-radius:4px;background:${esc(c)};border:1px solid var(--line)"></span>`).join("")}</span> ${esc(d.charte.police || "")}` : `pas encore extraite — <code>npm.cmd run charte -- ${esc(site())}</code>`}</p>
+      </div>
+      <div class="card"><h2>Articles en cours et publiés</h2>
+        ${d.articles.length ? `<table><tr><th>Visuel</th><th>Article</th><th>Avancement</th><th>Liens</th></tr>
+          ${d.articles.map((a) => `<tr>
+            <td>${a.visuel ? `<img class="thumb" src="/fichiers/${esc(a.visuel)}" alt="">` : ""}</td>
+            <td><b>${esc(a.titre || a.fichier)}</b><div class="muted">${esc(a.requete || "")}</div></td>
+            <td><div class="steps">${etapes.map(([k, l]) => `<span class="step ${a.etapes && a.etapes[k] ? "ok" : ""}">${l}</span>`).join("")}</div></td>
+            <td>${a.url ? lien(a.url) : ""}${a.facebook ? `<a class="url" href="${esc(a.facebook)}" target="_blank">post Facebook</a>` : ""}</td></tr>`).join("")}</table>`
+          : `<div class="empty">Aucun article suivi pour ce site. Lance <code>${esc(cmd)}</code> dans Claude Code.</div>`}
+      </div>`;
+  },
+
+  async sea() {
+    const client = $("#client").value;
+    if (!client) return `<div class="card empty">Choisis un compte Google Ads en haut de page.</div>`;
+    const d = await api(`/api/sea?${q(`&client=${client}`)}`);
+    const eur = (n) => n == null ? "—" : Number(n).toLocaleString("fr-FR", { style: "currency", currency: d.devise || "EUR" });
+    const c = d.croisement;
+    return `
+      <div class="grid kpis">
+        ${kpi("Coût", eur(d.totaux.cost), "")}${kpi("Clics Ads", fmt(d.totaux.clicks), "")}
+        ${kpi("Conversions", fmt(d.totaux.conversions), "")}${kpi("CPA", d.totaux.conversions ? eur(d.totaux.cost / d.totaux.conversions) : "—", "")}
+      </div>
+      ${c ? `<div class="grid two">
+        <div class="card"><h2>Payé alors que déjà top 3 en SEO <small>économies possibles</small></h2><div class="scroll"><table>
+          <tr><th>Terme</th><th class="n">Coût Ads</th><th class="n">Pos. SEO</th><th class="n">Clics SEO</th></tr>
+          ${c.doublons.map((r) => `<tr><td>${esc(r.terme)}</td><td class="n">${eur(r.cost)}</td><td class="n">${pos(r.position)}</td><td class="n">${fmt(r.clicksSeo)}</td></tr>`).join("") || '<tr><td colspan="4" class="empty">Aucun</td></tr>'}</table></div>
+          <p class="sub" style="margin-top:10px">À tester : baisser les enchères sur ces termes et mesurer si les clics SEO compensent (les marques et termes concurrentiels restent souvent à protéger).</p></div>
+        <div class="card"><h2>Convertit en Ads mais absent du top 10 SEO <small>contenus à créer</small></h2><div class="scroll"><table>
+          <tr><th>Terme</th><th class="n">Conv.</th><th class="n">Coût</th><th class="n">Pos. SEO</th><th></th></tr>
+          ${c.aRenforcerSeo.map((r) => `<tr><td>${esc(r.terme)}</td><td class="n">${fmt(r.conversions)}</td><td class="n">${eur(r.cost)}</td><td class="n">${pos(r.position)}</td>
+            <td>${btn(`/seo-pilote:seo-article-complet ${site()} ${JSON.stringify(r.terme)}`, "Créer l’article")}</td></tr>`).join("") || '<tr><td colspan="5" class="empty">Aucun</td></tr>'}</table></div></div>
+      </div>` : ""}
+      <div class="card"><h2>Campagnes</h2><div class="scroll"><table>
+        <tr><th>Campagne</th><th>Type</th><th class="n">Impr.</th><th class="n">Clics</th><th class="n">Coût</th><th class="n">Conv.</th><th class="n">CPA</th></tr>
+        ${d.campagnes.map((r) => `<tr><td>${esc(r.dimensions.campaign)}</td><td class="muted">${esc(r.dimensions.channel)}</td><td class="n">${fmt(r.impressions)}</td><td class="n">${fmt(r.clicks)}</td><td class="n">${eur(r.cost)}</td><td class="n">${fmt(r.conversions)}</td><td class="n">${r.conversions ? eur(r.cost / r.conversions) : "—"}</td></tr>`).join("")}
+      </table></div></div>`;
+  },
+};
+
+async function lancerAudit() {
+  const b = $("#lancerAudit"); b.disabled = true; b.textContent = "Audit en cours…";
+  try { await api(`/api/audit?${qs()}&max=${$("#maxAudit").value}`, { method: "POST" }); toast("Audit terminé"); state.cacheApi.clear(); }
+  catch (e) { toast(e.message); }
+  render();
+}
+window.lancerAudit = lancerAudit;
+window.voirLiens = async (url) => {
+  try {
+    const d = await api(`/api/maillage/page?${qs()}&url=${encodeURIComponent(url)}`);
+    const liste = (l) => l.length ? `<div class="scroll" style="max-height:300px">${l.map(lien).join("")}</div>` : '<p class="muted">Aucun.</p>';
+    $("#drawer").innerHTML = `<div class="drawer-bg" onclick="fermer()"></div><div class="drawer" role="dialog" aria-label="Liens de la page">
+      <div style="display:flex;justify-content:space-between;gap:10px"><span class="chip">Maillage</span><button class="btn sec sm" onclick="fermer()">Fermer</button></div>
+      <div>${lien(url)}</div>
+      <div><span class="lbl">${fmt(d.entrants.length)} pages pointent vers elle (liens entrants)</span>${liste(d.entrants)}</div>
+      <div><span class="lbl">${fmt(d.sortants.length)} liens internes partent de la page (sortants)</span>${liste(d.sortants)}</div>
+      ${btn(`/seo-pilote:seo-maillage ${site()} ${url}`, "Proposer des liens avec Claude", "btn")}</div>`;
+  } catch (e) { toast(e.message); }
+};
+window.creerPanier = async () => {
+  const b = $("#visiCreer"); if (b) { b.disabled = true; b.textContent = "Lecture de 3 mois de Search Console…"; }
+  try { const p = await api(`/api/visibilite/panier?${qs()}&taille=${$("#visiTaille")?.value ?? 400}${marque() ? "&marque=" + encodeURIComponent(marque()) : ""}`, { method: "POST" }); toast(`Panier créé : ${p.nbRequetes} requêtes. Calcul de l'historique…`); state.cacheApi.clear(); }
+  catch (e) { toast(e.message); }
+  render();
+};
+window.reglerKr = async () => {
+  try { await api(`/api/visibilite/reglages?${qs()}&baseline=${$("#visiBase").value}&cible=${$("#visiCible").value}&echeance=${encodeURIComponent($("#visiEch").value)}`, { method: "POST" }); toast("Réglages enregistrés"); state.cacheApi.clear(); }
+  catch (e) { toast(e.message); }
+  render(false);
+};
+window.lancerBench = async () => {
+  const requete = $("#benchReq").value.trim(), page = $("#benchPage").value.trim();
+  if (!requete) return toast("Indique une requête");
+  state.filtres.benchReq = requete; state.filtres.benchPage = page;
+  const b = $("#benchGo"); b.disabled = true; b.textContent = "Benchmark en cours (≈ 30 s)…";
+  try { await api(`/api/benchmark?${qs()}&requete=${encodeURIComponent(requete)}&page=${encodeURIComponent(page)}`, { method: "POST" }); state.filtres.benchVoir = requete; state.cacheApi.clear(); toast("Benchmark terminé"); }
+  catch (e) { toast(e.message); }
+  render();
+};
+
+// --- structure : barre latérale, période, sources ---
+function dessinerNav() {
+  $("#tabs").innerHTML = NAV.map(([k, l, d]) => `<button class="nav ${state.tab === k ? "on" : ""}" onclick="changerVue('${k}')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>${l}${k === "alertes" && state.nbAlertes ? `<span class="ct alert">${state.nbAlertes > 99 ? "99+" : state.nbAlertes}</span>` : ""}</button>`).join("");
+  $("#crumbVue").textContent = NAV.find((n) => n[0] === state.tab)?.[1] ?? "";
+}
+function dessinerSites() {
+  $("#sites").innerHTML = state.sites.map((s, i) => {
+    const nom = s.cle;
+    const ini = nom.replace(/^blog\./, "").slice(0, 2).toUpperCase();
+    return `<button class="nav ${s.siteUrl === state.site ? "on" : ""}" onclick="choisirSite(${attr(s.siteUrl)})" title="${esc(s.siteUrl)}"><span class="site-badge" style="background:${COULEURS[i % COULEURS.length]}">${esc(ini)}</span><span class="site-txt"><span>${esc(nom)}</span><span class="faint" style="font-size:11px">${esc(s.siteUrl.startsWith("sc-domain:") ? "domaine" : "préfixe")}</span></span></button>`;
+  }).join("");
+  const s = state.sites.find((x) => x.siteUrl === state.site);
+  $("#crumbSite").textContent = s ? s.cle : "—";
+  $("#marque").value = memo("pilote-marque-" + state.site) ?? "";
+}
+function dessinerPeriodes() {
+  $("#periodes").innerHTML = PERIODES.map(([k, l]) => `<button class="${state.jours === k ? "on" : ""}" onclick="choisirPeriode('${k}')">${l}</button>`).join("");
+  $("#moteurs").innerHTML = [["google", "Google"], ["bing", "Bing"]].map(([k, l]) => `<button class="${state.moteur === k ? "on" : ""}" onclick="choisirMoteur('${k}')" title="Moteur analysé dans Vue d'ensemble, Mots-clés, Pages et Alertes">${l}</button>`).join("");
+}
+window.choisirMoteur = (m) => { state.moteur = m; memo("pilote-moteur", m); dessinerPeriodes(); render(); };
+function dessinerSources(s) {
+  if (s) state.sourcesInfo = s;
+  const x = state.sourcesInfo || {};
+  const ligneS = (ok, nom, txt) => `<div style="display:flex;gap:8px;align-items:center"><span class="${ok ? "live" : ""}" style="width:8px;height:8px;border-radius:999px;background:${ok ? "var(--accent)" : "#34426A"};flex:none"></span><span style="font-weight:600">${nom}</span><span class="faint" style="margin-left:auto;text-align:right">${txt}</span></div>`;
+  $("#sources").innerHTML = `<span class="lbl">Données</span>
+    ${ligneS(true, "Search Console", "15 min de cache")}
+    ${ligneS(!!x.crawl, "Crawl", x.crawl ? new Date(x.crawl.date).toLocaleDateString("fr-FR") + " · " + fmt(x.crawl.pages) + " URL" : "à lancer")}
+    ${ligneS(!!x.pagespeed, "PageSpeed", x.pagespeed ? new Date(x.pagespeed.date).toLocaleDateString("fr-FR") : "à lancer")}
+    ${ligneS(!!x.firecrawl, "Firecrawl", x.firecrawl ? "clé API OK" : "pas de clé")}`;
+}
+window.changerVue = (k) => { state.tab = k; fermer(); dessinerNav(); window.scrollTo(0, 0); render(); };
+window.choisirSite = (s) => { state.site = s; memo("pilote-site", s); state.cluster = 0; state.taches = {}; state.filtres = {}; dessinerSites(); render(); };
+window.choisirPeriode = (j) => { state.jours = j; memo("pilote-jours", j); dessinerPeriodes(); render(); };
+
+let jeton = 0;
+async function render(montrerChargement = true) {
+  const mon = ++jeton;
+  if (!site()) return;
+  $("#status").textContent = "· chargement…";
+  if (montrerChargement) $("#main").innerHTML = '<div class="empty"><span class="live" style="color:var(--accent)">●</span> Lecture des données… (un gros site peut prendre 20 à 40 s la première fois)</div>';
+  try {
+    const html = await vues[state.tab]();
+    if (mon === jeton) {
+      $("#main").innerHTML = aideHtml(state.tab) + html;
+      if (state.focus) { const el = document.getElementById(state.focus); if (el) { el.focus(); const v = el.value; el.value = ""; el.value = v; } state.focus = null; }
+    }
+  } catch (e) {
+    if (mon === jeton) $("#main").innerHTML = erreur(e);
+  } finally {
+    state.frais = false;
+    if (mon === jeton) $("#status").textContent = "";
+  }
+}
+window.render = render;
+window.state = state;
+
+async function init() {
+  dessinerNav(); dessinerPeriodes(); dessinerSources();
+  state.jours = memo("pilote-jours") || "28"; state.moteur = memo("pilote-moteur") || "google"; dessinerPeriodes();
+  try {
+    const d = await api("/api/sites");
+    const msgs = [d.erreurGsc, d.erreurBing, d.erreurAds].filter(Boolean);
+    state.sites = d.sites;
+    $("#client").innerHTML = `<option value="">—</option>` + d.clientsAds.map((c) => `<option value="${c.id}">${esc(c.nom)} (${c.id})</option>`).join("");
+    const m = memo("pilote-site"); state.site = m && d.sites.some((s) => s.siteUrl === m) ? m : d.sites[0]?.siteUrl;
+    const mc = memo("pilote-client"); if (mc) $("#client").value = mc;
+    dessinerSites();
+    if (!d.sites.length) { $("#main").innerHTML = msgs.map(erreur).join("") + '<div class="card empty">Aucune propriété Search Console accessible. Vérifie .env et lance <code>npm.cmd run auth:google</code>.</div>'; return; }
+    if (msgs.length) $("#status").innerHTML = `<span class="down" title="${esc(msgs.join(" | "))}">⚠ ${msgs.length} source(s) en erreur</span>`;
+    render();
+  } catch (e) { $("#main").innerHTML = erreur(e); }
+}
+$("#client").onchange = () => { memo("pilote-client", $("#client").value); render(false); };
+$("#marque").onchange = () => { memo("pilote-marque-" + state.site, $("#marque").value.trim()); render(false); };
+$("#refresh").onclick = () => { state.frais = true; state.cacheApi.clear(); render(); };
+init();
+</script>
+</body>
+</html>
