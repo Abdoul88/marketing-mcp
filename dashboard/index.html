@@ -193,8 +193,10 @@ const $ = (s) => document.querySelector(s);
 const NAV = [
   ["cockpit", "Vue d'ensemble", "M3.5 18a9 9 0 1 1 17 0 M12 14l4.5-4.5"],
   ["visi", "KR Visibilité", "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0"],
+  ["local", "Visibilité locale", "M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z M12 9.5m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0"],
   ["mots", "Mots-clés", "M4 6h16 M4 12h10 M4 18h6 M17 15l3 3-3 3"],
   ["pages", "Pages & backlog", "M9 6h11 M9 12h11 M9 18h11 M4.5 6h.01 M4.5 12h.01 M4.5 18h.01"],
+  ["maillage", "Maillage interne", "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7 M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"],
   ["alertes", "Alertes", "M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.9 1.9 0 0 0 3.4 0"],
   ["crawl", "Crawl", "M12 3v4 M12 17v4 M3 12h4 M17 12h4 M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0"],
   ["vitesse", "Core Web Vitals", "M13 2L3 14h9l-1 8 10-12h-9z"],
@@ -404,6 +406,60 @@ window.fermer = () => { $("#drawer").innerHTML = ""; };
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermer(); });
 window.benchDepuis = (requete, page) => { state.filtres.benchReq = requete; state.filtres.benchPage = page; changerVue("bench"); };
 
+// --- Explications de chaque vue, pour quelqu'un qui découvre le dashboard ---
+const AIDE = {
+  cockpit: ["Le résumé de la santé SEO du site sur la période choisie.",
+    "Les cartes du haut comparent la période à la précédente (▲ vert = mieux, ▼ rouge = moins bien). « Ce qui a changé » liste les baisses anormales. « Où est la valeur » montre les grands sujets du site : plus un bloc est grand, plus il est vu dans Google ; vert = il gagne des clics, rouge = il en perd.",
+    "Commencer par les alertes critiques, puis traiter les actions du tableau « Quoi faire maintenant » dans l'ordre du score."],
+  visi: ["L'indicateur officiel (KR) du SEO : à quel point INDIGO Neo est visible dans Google sur une liste fixe de recherches importantes (parking + ville, gare, aéroport…), qu'il y ait un clic ou non.",
+    "100 % = premier sur toutes les recherches de la liste ; 0 % = absent. Une recherche importante compte plus qu'une petite. On compare chaque mois à la baseline (le point de départ) et à la cible de fin d'année.",
+    "Regarder les typologies qui baissent (tableau « Par typologie ») et les requêtes au score faible : ce sont les pages à retravailler."],
+  local: ["La visibilité des fiches Google des parkings (Google Business Profile, gérées dans Yext) et le lien entre chaque fiche et sa page sur le site.",
+    "Les chiffres Yext décrivent les fiches (vues, demandes d'itinéraire, appels, clics vers le site). Les chiffres Search Console « local » ne comptent que les visites arrivées par le bouton « Site web » d'une fiche (toute URL avec un paramètre utm_), page par page. La « part locale » dit quelle part du trafic d'une page vient de sa fiche.",
+    "Corriger les fiches en anomalie, créer une page pour les fiches qui n'en ont pas, et vérifier les pages parking qui reçoivent du trafic organique mais aucun trafic de fiche (fiche absente ou mal reliée)."],
+  mots: ["Toutes les recherches pour lesquelles le site apparaît dans Google (ou Bing), regroupées et comparées à la période précédente.",
+    "Top 3 = les 3 premiers résultats (la majorité des clics), 4-10 = première page, 11-20 = deuxième page. « Marque » = recherches contenant Indigo : elles ne mesurent pas le travail SEO. Les clusters regroupent les recherches par sujet.",
+    "Surveiller les sorties du Top 3, et travailler les requêtes en 4-20 : c'est là que les gains sont les plus rapides."],
+  pages: ["Chaque page du site avec ses chiffres Google, son état technique (crawl) et sa vitesse, plus la liste priorisée des actions à mener.",
+    "Les étiquettes signalent les problèmes : « zombie » = page indexable que personne ne voit, « orpheline » = aucun lien ne mène à elle, « profonde » = trop de clics depuis l'accueil, « contenu mince » = moins de 300 mots. Le score d'une action = clics à gagner × probabilité de réussite ÷ effort.",
+    "Prendre les actions par score décroissant ; cliquer sur une action pour voir le calcul et copier la commande pour Claude."],
+  maillage: ["Les liens entre les pages du site : combien de liens pointent vers chaque page (entrants) et combien en partent (sortants).",
+    "Plus une page reçoit de liens, plus Google la considère importante. Le « PageRank interne » (0 à 100) résume cette importance. Une page qui fait beaucoup d'impressions mais reçoit peu de liens est sous-exploitée ; une page très liée sans aucun trafic gaspille cette popularité.",
+    "Ajouter des liens vers les pages « à renforcer » depuis les pages fortes du même sujet ; cliquer sur une URL pour voir qui pointe vers elle."],
+  alertes: ["Tout ce qui a baissé de façon anormale et mérite d'être vérifié.",
+    "Critique = à traiter cette semaine (forte perte de trafic, page en erreur avec du trafic) ; important = à surveiller ; info = signal faible. Les seuils se règlent en haut du bloc.",
+    "Pour chaque alerte critique : vérifier la page (en ligne ? indexable ?), la concurrence sur la requête, et la saisonnalité."],
+  crawl: ["Un robot parcourt le site comme Google, de lien en lien depuis l'accueil, et relève l'état de chaque page.",
+    "200 = page OK, 301/308 = redirection, 404 = page introuvable. La profondeur = nombre de clics depuis l'accueil (idéalement 3 au maximum). « Liens cassés » = liens internes vers des pages en erreur ; « orphelines » = pages du sitemap qu'aucun lien n'atteint.",
+    "Corriger d'abord les liens cassés et les liens vers des redirections, puis remonter les pages trop profondes."],
+  vitesse: ["La rapidité et la stabilité des pages, mesurées par Google sur les vrais visiteurs (Core Web Vitals).",
+    "LCP = temps d'affichage du contenu principal (bon ≤ 2,5 s), INP = réactivité aux clics (bon ≤ 200 ms), CLS = décalage de la page pendant le chargement (bon ≤ 0,1). « Terrain » = vrais utilisateurs, « labo » = test simulé.",
+    "Traiter en priorité les pages à fort trafic notées « mauvais », avec les optimisations les plus rentables listées en bas."],
+  bench: ["La comparaison d'une page du site avec les 3 premiers résultats Google sur une recherche donnée.",
+    "On compare la longueur, la structure (titres H2/H3), la présence d'une FAQ ou d'un tableau, les données structurées et le vocabulaire. « Couverture » = part des mots utilisés par les concurrents qu'on retrouve sur la page.",
+    "Combler les écarts listés et intégrer les termes manquants pertinents, puis remesurer quelques semaines plus tard."],
+  perf: ["Les chiffres bruts de Search Console et Bing : clics, impressions, CTR et position.",
+    "CTR = part des personnes qui cliquent après avoir vu le site ; position = rang moyen dans les résultats (1 = premier).",
+    "Vue de contrôle : pour décider, préférer la vue d'ensemble et les mots-clés."],
+  opp: ["Les opportunités détectées automatiquement dans Search Console.",
+    "CTR faible = bien classé mais peu cliqué (titre à revoir) ; page 2 = presque en première page ; cannibalisation = plusieurs pages se concurrencent ; déclin = page qui perd du trafic.",
+    "Copier la commande et la coller dans Claude Code pour obtenir la correction."],
+  disc: ["Le trafic venant de Google Discover, le fil d'actualités de l'application Google.", "Discover ne se « demande » pas : Google choisit. Ces chiffres montrent ce qui a été poussé.", "Soigner les images (1200 px), les titres et la fraîcheur des articles."],
+  tech: ["Un contrôle rapide des pages du sitemap et les données d'exploration de Bing.", "Chaque ligne est un type de problème avec le nombre de pages concernées.", "Pour une analyse complète (liens, profondeur), utiliser plutôt l'onglet Crawl."],
+  cont: ["Le suivi des articles en cours de création ou publiés.", "Chaque article avance du brief à la publication et au partage Facebook.", "Copier la commande pour lancer un nouvel article avec Claude."],
+  sea: ["Le croisement entre Google Ads (payant) et le SEO (gratuit).", "À gauche, les recherches payées alors que le site est déjà dans le Top 3 gratuit (économies possibles) ; à droite, celles qui convertissent en payant mais où le site est absent en gratuit (contenus à créer).", "Tester une baisse d'enchères sur les premières, créer des pages pour les secondes."],
+};
+function aideHtml(tab) {
+  const a = AIDE[tab]; if (!a) return "";
+  const ferme = memo("pilote-aide-" + tab) === "0";
+  return `<details class="note" ${ferme ? "" : "open"} ontoggle="memo('pilote-aide-${tab}', this.open ? '1' : '0')" style="line-height:1.55">
+    <summary style="color:var(--ink);font-weight:600">ⓘ À quoi sert cette vue ?</summary>
+    <div style="margin-top:8px"><b style="color:var(--ink)">${esc(a[0])}</b></div>
+    <div style="margin-top:6px"><span class="lbl" style="margin-right:6px">Comment lire</span>${esc(a[1])}</div>
+    <div style="margin-top:6px"><span class="lbl" style="margin-right:6px">Que faire</span>${esc(a[2])}</div></details>`;
+}
+window.memo = (k, v) => memo(k, v);
+
 const TYPES_ACTION = { meta: "Title & meta", contenu: "Contenu", maillage: "Maillage", cannibalisation: "Cannibalisation", declin: "Déclin", technique: "Technique", indexation: "Indexation", vitesse: "Vitesse", profondeur: "Profondeur", title: "Title" };
 const NOTE = { bon: ["good", "Bon"], a_ameliorer: ["warn", "À améliorer"], mauvais: ["bad", "Mauvais"] };
 const noteChip = (n) => n ? `<span class="chip ${NOTE[n][0]}">${NOTE[n][1]}</span>` : '<span class="faint">—</span>';
@@ -553,6 +609,86 @@ const vues = {
         <div class="stat"><span>Visibilité locale (Local Pack, Maps)</span><span class="muted">dépend du point de recherche : à mesurer par grille géographique (Yext, Local Falcon…), séparément</span></div>
         <div class="stat"><span>Visibilité Bing</span><span class="mono">${bDernier ? pct(bDernier.part, 1) : "—"}</span></div>
         <div class="stat"><span>Clics / impressions organiques</span><span class="muted">onglet Vue d'ensemble : trafic réellement capté, plus le KR</span></div></section>`;
+  },
+
+  async local() {
+    const d = await api(`/api/local?${q()}`);
+    const y = d.yext, t = d.totaux, v = d.visibiliteLocale;
+    const M = y?.mensuel ?? [];
+    const der = M.at(-1), n1 = M.find((m) => der && m.mois === `${Number(der.mois.slice(0, 4)) - 1}${der.mois.slice(4)}`);
+    const nomMois = (m) => new Date(m + "-15").toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+    const vue = f("localVue", "pages");
+    const rech = f("localRech", "").toLowerCase();
+    const lignes = rech ? d.lignes.filter((l) => l.url.toLowerCase().includes(rech)) : d.lignes;
+    return `
+      <section class="grid kpis">
+        ${kpi("Clics depuis les fiches", fmtK(t.clicks), varHtml(t.varClicks), `${fmt(t.pages)} pages reçoivent du trafic de fiche · Search Console`, { src: "GSC · URL utm_" })}
+        ${kpi("Impressions des liens de fiche", fmtK(t.impressions), varHtml(t.varImpressions), `position moyenne ${pos(t.position)} · CTR ${pct(t.ctr, 1)}`, { src: "GSC" })}
+        ${v ? kpi("Visibilité locale (panier KR)", pct(v.part, 1), "", `même barème que le KR, sur les liens des fiches · Top 3 : ${fmt(v.top3)}`, { src: "KR local" }) : kpi("Visibilité locale", "—", "", "crée d'abord le panier dans « KR Visibilité »")}
+        ${der ? kpi(`Vues des fiches (${nomMois(der.mois)})`, fmtK(der.impressions), n1 ? varHtml((der.impressions - n1.impressions) / n1.impressions) : "", n1 ? `vs ${nomMois(n1.mois)} : ${fmtK(n1.impressions)}` : "", { src: "Yext", spark: M.map((m) => m.impressions), couleur: "#FFC857" }) : ""}
+        ${der ? kpi(`Clics vers le site (${nomMois(der.mois)})`, fmtK(der.siteWeb), n1 ? varHtml((der.siteWeb - n1.siteWeb) / n1.siteWeb) : "", `itinéraires ${fmtK(der.itineraires)} · appels ${fmtK(der.appels)}`, { src: "Yext", spark: M.map((m) => m.siteWeb), couleur: "var(--link)" }) : ""}
+        ${y ? kpi("Fiches Google", fmt(y.google.enLigne), `<span class="chip ${y.google.enAnomalie ? "bad" : "good"}">${fmt(y.google.enAnomalie)} en anomalie</span>`, `${fmt(y.fiches.actives)} parkings actifs · ${fmt(y.fiches.activesSansPage)} sans page · ${fmt(y.fiches.activesSansGooglePlaceId)} sans Google Place ID`, { src: "Yext" }) : ""}
+      </section>
+      ${!y ? `<div class="note">Pas encore de données Yext pour ce site : dans Claude Code, demande « mets à jour les données Yext du dashboard » (MCP Yext).</div>` : `<p class="faint" style="margin:0">Données Yext du ${new Date(y.date).toLocaleDateString("fr-FR")} · ${esc(y.source)}${y.note ? " · " + esc(y.note) : ""}</p>`}
+      ${M.length ? `<div class="row">
+        <section class="panel"><h2>Fiches Google : vues par mois</h2><p class="sub">Nombre d'affichages des fiches dans Google Search et Maps (Yext)</p>
+          ${ligne([{ nom: "Vues des fiches", couleur: "#FFC857", points: M.map((m) => ({ date: m.mois, v: m.impressions })) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+        <section class="panel"><h2>Actions sur les fiches</h2><p class="sub">Itinéraires, clics vers le site et appels par mois (Yext)</p>
+          ${ligne([{ nom: "Itinéraires", couleur: "var(--accent)", points: M.map((m) => ({ date: m.mois, v: m.itineraires })) }, { nom: "Clics site", couleur: "var(--link)", points: M.map((m) => ({ date: m.mois, v: m.siteWeb })) }, { nom: "Appels", couleur: "#FF9F85", points: M.map((m) => ({ date: m.mois, v: m.appels })) }], { cle: "v", h: 200, etiquette: (p) => nomMois(p.date) })}</section>
+      </div>` : ""}
+      ${v ? `<section class="panel"><h2>Visibilité locale par typologie</h2><p class="sub">Score du panier KR calculé sur la position des liens de fiche (Local Pack, fiche d'établissement) au lieu des résultats classiques</p>
+        ${barres(v.parCategorie.map((c) => ({ label: c.nom.replace(/^Parking \+ /, ""), valeur: c.part * 100, c })), { couleur: () => "#FFC857", droite: (x) => `${pct(x.c.part, 1)} · ${x.c.requetes} req.` })}</section>` : ""}
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("localVue", [["pages", `Rapprochement fiche ↔ page (${fmt(d.lignes.length)})`], ["requetes", `Requêtes locales (${fmt(d.requetes.length)})`], ["sansfiche", `Pages sans trafic de fiche (${fmt(d.pagesOrganiquesSansFiche.length)})`], ["sanspage", `Fiches sans page (${fmt(y?.fiches.activesSansPage ?? 0)})`]], "pages")}
+        ${vue === "pages" ? exportBtn("local", lignes, [["url", "URL"], ["clicsLocal", "Clics fiche"], ["clicsLocalPrec", "Clics fiche préc."], ["impressionsLocal", "Impressions fiche"], ["positionLocal", "Position fiche"], ["clicsOrganique", "Clics organiques"], ["positionOrganique", "Position organique"], ["partLocal", "Part locale"], ["status", "HTTP"], ["liensEntrants", "Liens entrants"], ["mots", "Mots"]]) : ""}</div>
+        ${vue === "pages" ? `<div class="filters">${recherche("localRech", "Filtrer une URL…")}</div>${tableau("local", [
+            { k: "url", label: "Page (rapprochée par URL)", f: (l) => lien(l.url) },
+            { k: "clicsLocal", label: "Clics fiche", n: 1, f: (l) => `<b>${fmt(l.clicsLocal)}</b>` }, { k: "varLocal", label: "Évol.", n: 1, f: (l) => varHtml(l.varLocal) },
+            { k: "impressionsLocal", label: "Impr. fiche", n: 1, f: (l) => fmt(l.impressionsLocal) }, { k: "positionLocal", label: "Pos. fiche", n: 1, f: (l) => pos(l.positionLocal) },
+            { k: "clicsOrganique", label: "Clics organiques", n: 1, f: (l) => fmt(l.clicsOrganique) }, { k: "positionOrganique", label: "Pos. orga.", n: 1, f: (l) => pos(l.positionOrganique) },
+            { k: "partLocal", label: "Part locale", n: 1, f: (l) => `<span class="mono">${pct(l.partLocal, 0)}</span>` },
+            { k: "status", label: "HTTP", n: 1, f: (l) => l.status == null ? '<span class="faint">non crawlée</span>' : `<span class="${l.status >= 400 ? "down" : "faint"}">${l.status}</span>` },
+            { k: "liensEntrants", label: "Liens ent.", n: 1, f: (l) => fmt(l.liensEntrants) },
+          ], lignes)}`
+        : vue === "requetes" ? `<p class="sub">Recherches pour lesquelles un lien de fiche Google est apparu (souvent le Local Pack) et sa position.</p>${tableau("locreq", [
+            { k: "requete", label: "Requête", f: (r) => `<b>${esc(r.requete)}</b><div>${lien(r.page)}</div>` },
+            { k: "clicks", label: "Clics", n: 1, f: (r) => fmt(r.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (r) => fmt(r.impressions) },
+            { k: "ctr", label: "CTR", n: 1, f: (r) => pct(r.ctr) }, { k: "position", label: "Pos.", n: 1, f: (r) => pos(r.position) },
+          ], d.requetes)}`
+        : vue === "sansfiche" ? `<p class="sub">Pages parking qui font au moins 20 clics organiques mais ne reçoivent aucun clic depuis une fiche Google : fiche manquante, fermée, ou dont le lien « site web » ne pointe pas vers cette URL.</p>${tableau("sansfiche", [{ k: "url", label: "Page", f: (l) => lien(l.url) }, { k: "clicks", label: "Clics organiques", n: 1, f: (l) => fmt(l.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (l) => fmt(l.impressions) }], d.pagesOrganiquesSansFiche, { vide: "Toutes les pages parking à trafic reçoivent aussi du trafic de fiche." })}`
+        : `<p class="sub">Fiches Yext actives sans page de destination : le bouton « site web » de la fiche ne mène pas vers la page du parking (premier lot lu, hors bornes de recharge).</p>${tableau("sanspage", [{ k: "nom", label: "Fiche" }, { k: "ville", label: "Ville" }, { k: "id", label: "ID Yext", f: (x) => `<span class="mono faint">${esc(x.id)}</span>` }], y?.fichesSansPage ?? [])}`}
+      </section>`;
+  },
+
+  async maillage() {
+    const d = await api(`/api/maillage?${q()}`);
+    if (!d) return `<section class="panel"><h2>Maillage interne</h2><p class="sub">Le maillage se calcule à partir du crawl.</p><button class="btn" onclick="changerVue('crawl')">Lancer un crawl</button></section>`;
+    const vue = f("mailVue", "toutes"), rech = f("mailRech", "").toLowerCase();
+    let l = vue === "renforcer" ? d.aRenforcer : vue === "gaspillage" ? d.gaspillage : d.pages;
+    if (rech) l = l.filter((x) => x.url.toLowerCase().includes(rech));
+    const s = d.stats;
+    return `
+      <section class="grid kpis">
+        ${kpi("Pages analysées", fmt(d.total), "", `crawl du ${new Date(d.date).toLocaleString("fr-FR")}`)}
+        ${kpi("Liens entrants (médiane)", fmt(s.entrantsMedian), "", "par page indexable")}
+        ${kpi("Liens sortants (médiane)", fmt(s.sortantsMedian), "", `${fmt(s.trop)} pages à plus de 150 liens`)}
+        ${kpi("Moins de 3 liens entrants", fmt(s.moinsDe3), "", `dont ${fmt(s.sansLien)} sans aucun lien`)}
+        ${kpi("À renforcer", fmt(d.aRenforcer.length), "", "trafic élevé, peu poussées par les liens")}
+        ${kpi("Popularité gaspillée", fmt(d.gaspillage.length), "", "très liées, aucun clic")}
+      </section>
+      <section class="panel"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        ${segment("mailVue", [["toutes", "Toutes les pages"], ["renforcer", "À renforcer"], ["gaspillage", "Popularité gaspillée"]], "toutes")}
+        ${exportBtn("maillage", l, [["url", "URL"], ["entrants", "Liens entrants"], ["sortants", "Liens sortants"], ["profondeur", "Profondeur"], ["pagerank", "PageRank interne"], ["clicks", "Clics"], ["impressions", "Impressions"], ["position", "Position"], ["mots", "Mots"]])}</div>
+        <div class="filters">${recherche("mailRech", "Filtrer une URL…")}<span class="faint">${fmt(l.length)} pages · clic sur une URL pour voir ses liens</span></div>
+        ${tableau("mail", [
+          { k: "url", label: "Page", f: (x) => `<button class="rowlink" onclick="voirLiens(${attr(x.url)})" style="font-weight:500;max-width:440px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${esc(court(x.url))}</button>` },
+          { k: "entrants", label: "Liens entrants", n: 1, f: (x) => `<b class="${x.entrants < 3 ? "down" : ""}">${fmt(x.entrants)}</b>` },
+          { k: "sortants", label: "Liens sortants", n: 1, f: (x) => `<span class="${x.sortants > 150 ? "down" : ""}">${fmt(x.sortants)}</span>` },
+          { k: "profondeur", label: "Prof.", n: 1, f: (x) => x.profondeur == null ? "—" : fmt(x.profondeur) },
+          { k: "pagerank", label: "PageRank interne", n: 1, f: (x) => `<span style="display:inline-flex;gap:8px;align-items:center"><span class="track" style="width:70px;height:6px;border-radius:9px;background:#161F36;display:inline-block;overflow:hidden"><span style="display:block;height:100%;width:${x.pagerank}%;background:var(--accent)"></span></span><span class="mono">${x.pagerank}</span></span>` },
+          { k: "clicks", label: "Clics", n: 1, f: (x) => fmt(x.clicks) }, { k: "impressions", label: "Impr.", n: 1, f: (x) => fmt(x.impressions) },
+          { k: "position", label: "Pos.", n: 1, f: (x) => pos(x.position) },
+        ], l, { max: 500 })}</section>`;
   },
 
   async mots() {
@@ -978,6 +1114,18 @@ async function lancerAudit() {
   render();
 }
 window.lancerAudit = lancerAudit;
+window.voirLiens = async (url) => {
+  try {
+    const d = await api(`/api/maillage/page?${qs()}&url=${encodeURIComponent(url)}`);
+    const liste = (l) => l.length ? `<div class="scroll" style="max-height:300px">${l.map(lien).join("")}</div>` : '<p class="muted">Aucun.</p>';
+    $("#drawer").innerHTML = `<div class="drawer-bg" onclick="fermer()"></div><div class="drawer" role="dialog" aria-label="Liens de la page">
+      <div style="display:flex;justify-content:space-between;gap:10px"><span class="chip">Maillage</span><button class="btn sec sm" onclick="fermer()">Fermer</button></div>
+      <div>${lien(url)}</div>
+      <div><span class="lbl">${fmt(d.entrants.length)} pages pointent vers elle (liens entrants)</span>${liste(d.entrants)}</div>
+      <div><span class="lbl">${fmt(d.sortants.length)} liens internes partent de la page (sortants)</span>${liste(d.sortants)}</div>
+      ${btn(`/seo-pilote:seo-maillage ${site()} ${url}`, "Proposer des liens avec Claude", "btn")}</div>`;
+  } catch (e) { toast(e.message); }
+};
 window.creerPanier = async () => {
   const b = $("#visiCreer"); if (b) { b.disabled = true; b.textContent = "Lecture de 3 mois de Search Console…"; }
   try { const p = await api(`/api/visibilite/panier?${qs()}&taille=${$("#visiTaille")?.value ?? 400}${marque() ? "&marque=" + encodeURIComponent(marque()) : ""}`, { method: "POST" }); toast(`Panier créé : ${p.nbRequetes} requêtes. Calcul de l'historique…`); state.cacheApi.clear(); }
@@ -1029,7 +1177,7 @@ function dessinerSources(s) {
     ${ligneS(!!x.pagespeed, "PageSpeed", x.pagespeed ? new Date(x.pagespeed.date).toLocaleDateString("fr-FR") : "à lancer")}
     ${ligneS(!!x.firecrawl, "Firecrawl", x.firecrawl ? "clé API OK" : "pas de clé")}`;
 }
-window.changerVue = (k) => { state.tab = k; fermer(); dessinerNav(); window.scrollTo(0, 0); render(false); };
+window.changerVue = (k) => { state.tab = k; fermer(); dessinerNav(); window.scrollTo(0, 0); render(); };
 window.choisirSite = (s) => { state.site = s; memo("pilote-site", s); state.cluster = 0; state.taches = {}; state.filtres = {}; dessinerSites(); render(); };
 window.choisirPeriode = (j) => { state.jours = j; memo("pilote-jours", j); dessinerPeriodes(); render(); };
 
@@ -1042,7 +1190,7 @@ async function render(montrerChargement = true) {
   try {
     const html = await vues[state.tab]();
     if (mon === jeton) {
-      $("#main").innerHTML = html;
+      $("#main").innerHTML = aideHtml(state.tab) + html;
       if (state.focus) { const el = document.getElementById(state.focus); if (el) { el.focus(); const v = el.value; el.value = ""; el.value = v; } state.focus = null; }
     }
   } catch (e) {

@@ -17,7 +17,7 @@ import { SearchConsoleClient } from "../gsc.js";
 import { hostKey, opportunites, periode, seoVsSea, totaux, variation, type Row } from "./analyse.js";
 import { auditer } from "./audit.js";
 import { benchmarker, type ResultatBenchmark } from "./benchmark.js";
-import { crawler, type ResultatCrawl } from "./crawl.js";
+import { crawler, pagerankInterne, type ResultatCrawl } from "./crawl.js";
 import {
   alertes, clustersParPage, clustersParTheme, distributionPositions, enrichirPages, enrichirRequetes,
   longueTraine, marqueParDefaut, mouvements, parIntention, parRepertoire, segmentMarque,
@@ -137,6 +137,9 @@ async function brutBing(site: string, per: ReturnType<typeof periode>, frais: bo
   };
 }
 
+/** Une URL avec un paramètre utm_ est le lien « site web » d'une fiche Google (GMB, géré dans Yext). */
+const estUrlFiche = (u: string) => /[?&]utm_/i.test(u);
+
 // --- KR de visibilité : mesures mensuelles ---
 const lirePanier = (site: string) => lireJson(join(DATA, "visibilite", `${hostKey(site)}.json`)) as Panier | null;
 const empreinte = (pa: Panier) => { let h = 0; for (const c of pa.requetes.map((q) => q.requete).sort().join("|")) h = (h * 31 + c.charCodeAt(0)) | 0; return String(h); };
@@ -183,7 +186,7 @@ async function mesuresBing(site: string, panier: Panier, frais: boolean): Promis
 /** Toutes les données d'une analyse (Search Console ou Bing), lues une fois puis partagées par les vues. */
 async function donnees(site: string, jours: number, marque: string[], frais: boolean, moteur: Moteur = "google") {
   const per = periode(jours);
-  const brut = moteur === "bing" ? await brutBing(site, per, frais) : await cached(`gsc-complet:${site}:${jours}`, frais, async () => {
+  let brut = moteur === "bing" ? await brutBing(site, per, frais) : await cached(`gsc-complet:${site}:${jours}`, frais, async () => {
     // Série quotidienne avec 28 jours d'historique en plus pour la détection d'anomalies.
     const debutSerie = new Date(per.debut); debutSerie.setUTCDate(debutSerie.getUTCDate() - 28);
     const [serie, prevSerie, q, qPrev, qp, pages, pagesPrev, device, devicePrev, pays] = await Promise.all([
@@ -200,6 +203,10 @@ async function donnees(site: string, jours: number, marque: string[], frais: boo
     ]);
     return { serie, prevSerie, q, qPrev, qp, pages, pagesPrev, device, devicePrev, pays };
   });
+  // Toute URL avec un paramètre utm_ vient d'une fiche Google (GMB/Yext) : elle relève de la vue Visibilité locale,
+  // pas des analyses organiques (pages, backlog, cannibalisation, déclin).
+  const sansUtm = (rows: Row[], i: number) => rows.filter((r) => !estUrlFiche(r.keys?.[i] ?? ""));
+  brut = { ...brut, qp: sansUtm(brut.qp, 1), pages: sansUtm(brut.pages, 0), pagesPrev: sansUtm(brut.pagesPrev, 0) };
   const requetes = enrichirRequetes(brut.q, brut.qPrev, brut.qp, marque);
   const pagesGsc = enrichirPages(brut.pages, brut.pagesPrev);
   const serieComplete = brut.serie.map((r) => ({ date: r.keys![0]!, clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position }));
@@ -431,6 +438,107 @@ const routes: Record<string, (p: Params, frais: boolean) => Promise<unknown>> = 
         pagespeed: psi ? { date: psi.date, analyses: psi.resultats.length } : null,
         firecrawl: !!process.env.FIRECRAWL_API_KEY, cleePagespeed: !!process.env.PAGESPEED_API_KEY,
       },
+    };
+  },
+
+  // --- Visibilité locale : fiches Google Business Profile (Yext) rapprochées des pages par URL ---
+  async "GET /api/local"(p, frais) {
+    const site = p.get("site")!;
+    const jours = Number(p.get("jours") ?? 28);
+    const per = periode(jours);
+    const yext = lireJson(join(DATA, "yext", `${hostKey(site)}.json`));
+    // Toute URL avec un paramètre utm_ vient d'une fiche Google (yextgmb, yext, gmb…) : Search Console isole donc le trafic local par URL.
+    const filtre = [{ dimension: "page" as const, operator: "contains" as const, expression: "utm_" }];
+    const [locCur, locPrev, locReq, orgCur] = await Promise.all([
+      cached(`local:p:${site}:${jours}`, frais, () => toutes(site, { startDate: per.debut, endDate: per.fin, dimensions: ["page"], filters: filtre }, 25_000)),
+      cached(`local:pp:${site}:${jours}`, frais, () => toutes(site, { startDate: per.debutPrec, endDate: per.finPrec, dimensions: ["page"], filters: filtre }, 25_000)),
+      cached(`local:q:${site}:${jours}`, frais, () => toutes(site, { startDate: per.debut, endDate: per.fin, dimensions: ["query", "page"], filters: filtre }, 50_000)),
+      donnees(site, jours, marquePour(site, p), frais).then((d) => d.pagesGsc),
+    ]);
+    const canon = (u: string) => { try { const x = new URL(u); x.search = ""; x.hash = ""; return x.toString().replace(/\/$/, ""); } catch { return u; } };
+    const agreger = (rows: Row[]) => {
+      const m = new Map<string, { clicks: number; impressions: number; pos: number }>();
+      for (const r of rows) { const k = canon(r.keys![0]!); const a = m.get(k) ?? { clicks: 0, impressions: 0, pos: 0 }; a.clicks += r.clicks; a.impressions += r.impressions; a.pos += r.position * r.impressions; m.set(k, a); }
+      return m;
+    };
+    const cur = agreger(locCur), prev = agreger(locPrev);
+    const org = new Map<string, { clicks: number; impressions: number; position: number }>();
+    for (const g of orgCur) { if (estUrlFiche(g.page)) continue; const k = canon(g.page); const a = org.get(k) ?? { clicks: 0, impressions: 0, position: 0 }; a.clicks += g.clicks; a.impressions += g.impressions; a.position = a.position || g.position; org.set(k, a); }
+    const crawl = lireCrawl(site);
+    const parCrawl = new Map((crawl?.pages ?? []).map((x) => [canon(x.url), x]));
+    const lignes = [...cur.entries()].map(([url, a]) => {
+      const pr = prev.get(url), o = org.get(url), c = parCrawl.get(url);
+      return {
+        url, clicsLocal: a.clicks, impressionsLocal: a.impressions, positionLocal: a.impressions ? Math.round((a.pos / a.impressions) * 10) / 10 : null,
+        clicsLocalPrec: pr?.clicks ?? 0, varLocal: variation(a.clicks, pr?.clicks ?? 0),
+        clicsOrganique: o?.clicks ?? 0, impressionsOrganique: o?.impressions ?? 0, positionOrganique: o?.position ?? null,
+        partLocal: a.clicks + (o?.clicks ?? 0) ? a.clicks / (a.clicks + (o?.clicks ?? 0)) : 0,
+        status: c?.status, liensEntrants: c?.liensEntrants, mots: c?.wordCount,
+      };
+    }).sort((x, y) => y.clicsLocal - x.clicsLocal || y.impressionsLocal - x.impressionsLocal);
+    const t = (rows: Row[]) => totaux(rows);
+    const tc = t(locCur), tp = t(locPrev);
+    // Requêtes qui déclenchent l'affichage des fiches (Local Pack, fiche d'établissement).
+    const parReq = new Map<string, Row>();
+    for (const r of locReq) { const q = r.keys![0]!; const a = parReq.get(q); if (!a || r.impressions > a.impressions) parReq.set(q, { ...r, keys: [q, r.keys![1]!] }); }
+    const requetes = [...parReq.values()].sort((a, b) => b.impressions - a.impressions).slice(0, 500)
+      .map((r) => ({ requete: r.keys![0]!, page: canon(r.keys![1]!), clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: Math.round(r.position * 10) / 10 }));
+    // Visibilité locale sur le panier du KR : même barème, appliqué aux positions des liens des fiches.
+    const panier = lirePanier(site);
+    const qLoc = [...new Map(locReq.map((r) => [r.keys![0]!, r])).values()].map((r) => ({ ...r, keys: [r.keys![0]!] }));
+    const visibiliteLocale = panier ? mesurer(panier, `${per.debut} → ${per.fin}`, qLoc) : null;
+    const pagesOrganiquesSansFiche = [...org.entries()].filter(([u, o]) => /\/parkings\/\d+/.test(u) && !cur.has(u) && o.clicks >= 20).sort((a, b) => b[1].clicks - a[1].clicks).slice(0, 200).map(([url, o]) => ({ url, clicks: o.clicks, impressions: o.impressions }));
+    return {
+      periode: per, yext,
+      totaux: { clicks: tc.clicks, impressions: tc.impressions, ctr: tc.ctr, position: tc.position, varClicks: variation(tc.clicks, tp.clicks), varImpressions: variation(tc.impressions, tp.impressions), pages: cur.size },
+      visibiliteLocale: visibiliteLocale && { part: visibiliteLocale.part, parCategorie: visibiliteLocale.parCategorie, top3: visibiliteLocale.top3, top10: visibiliteLocale.top10, requetes: visibiliteLocale.requetes.length },
+      lignes: lignes.slice(0, 2000), requetes, pagesOrganiquesSansFiche,
+    };
+  },
+
+  // --- Maillage interne : liens entrants / sortants par URL, PageRank interne ---
+  async "GET /api/maillage"(p, frais) {
+    const site = p.get("site")!;
+    const crawl = lireCrawl(site);
+    if (!crawl) return null;
+    const pr = pagerankInterne(crawl.pages);
+    const cle = (u: string) => u.replace(/\/$/, "");
+    let gsc = new Map<string, { clicks: number; impressions: number; position: number }>();
+    try {
+      const d = await donnees(site, Number(p.get("jours") ?? 28), marquePour(site, p), frais);
+      gsc = new Map(d.pagesGsc.map((g) => [cle(g.page), { clicks: g.clicks, impressions: g.impressions, position: g.position }]));
+    } catch { /* sans Search Console : maillage seul */ }
+    const pages = crawl.pages.filter((x) => x.status >= 200 && x.status < 300).map((x) => {
+      const g = gsc.get(cle(x.url));
+      return { url: x.url, entrants: x.liensEntrants, sortants: x.liens.length, profondeur: x.profondeur, pagerank: pr.get(x.url) ?? 0, indexable: x.indexable, clicks: g?.clicks ?? 0, impressions: g?.impressions ?? 0, position: g?.position ?? null, mots: x.wordCount };
+    });
+    const med = (l: number[]) => { const s = [...l].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : 0; };
+    const idx = pages.filter((x) => x.indexable);
+    return {
+      date: crawl.date, total: pages.length,
+      stats: {
+        entrantsMedian: med(idx.map((x) => x.entrants)), sortantsMedian: med(idx.map((x) => x.sortants)),
+        sansLien: idx.filter((x) => x.entrants === 0).length, moinsDe3: idx.filter((x) => x.entrants < 3).length,
+        trop: idx.filter((x) => x.sortants > 150).length,
+      },
+      // Pages qui rapportent du trafic mais que le maillage pousse peu : les meilleures cibles de liens.
+      aRenforcer: idx.filter((x) => x.impressions >= 500 && x.pagerank < 40).sort((a, b) => b.impressions - a.impressions).slice(0, 100),
+      // Pages très poussées par le maillage sans trafic : popularité « gaspillée ».
+      gaspillage: idx.filter((x) => x.pagerank >= 60 && x.clicks === 0).sort((a, b) => b.pagerank - a.pagerank).slice(0, 100),
+      pages: pages.sort((a, b) => b.entrants - a.entrants),
+    };
+  },
+
+  async "GET /api/maillage/page"(p) {
+    const crawl = lireCrawl(p.get("site")!);
+    const url = p.get("url") ?? "";
+    if (!crawl) return null;
+    const cle = (u: string) => u.replace(/\/$/, "");
+    const page = crawl.pages.find((x) => cle(x.url) === cle(url));
+    return {
+      url,
+      entrants: crawl.pages.filter((x) => x.liens.some((l) => cle(l) === cle(url))).map((x) => x.url),
+      sortants: page?.liens ?? [],
     };
   },
 

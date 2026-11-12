@@ -151,3 +151,23 @@ complémentaires sont à alimenter séparément (Yext Scout, outil de suivi loca
 Lancés depuis le dashboard en tâche de fond (barre de progression). Résultats dans `data/crawls/` et `data/pagespeed/`.
 Le crawler interne respecte `robots.txt`, part de l'accueil, suit les liens internes (hors nofollow), enregistre
 les redirections sans les suivre automatiquement, puis complète avec les URL du sitemap jamais atteintes (orphelines).
+
+### Visibilité locale (fiches Google via Yext)
+
+- **Yext** (MCP Yext, lu par Claude avec le skill `seo-local`, écrit dans `data/yext/<site>.json`) : vues des fiches,
+  itinéraires, clics vers le site et appels par mois ; fiches Google en ligne ou en anomalie ; fiches sans page de destination.
+- **Rapprochement par URL** : toute URL avec un paramètre `utm_` (yextgmb, yext, gmb…) vient d'une fiche Google. Search Console isole donc,
+  page par page, les clics et la position venus des fiches, à comparer au trafic organique de la même URL (« part locale »).
+- **Visibilité locale** : le barème du KR appliqué aux positions des liens de fiche sur le panier de requêtes.
+- **Pages sans trafic de fiche** : pages parking à trafic organique qui ne reçoivent aucun clic de fiche (fiche absente,
+  fermée ou mal reliée).
+
+Pour rafraîchir : dans Claude Code, « mets à jour les données Yext du dashboard » (`/seo-pilote:seo-local <site>`).
+
+### Maillage interne
+
+À partir du crawl : liens entrants et sortants de chaque URL, profondeur, PageRank interne (0-100, échelle log) croisé
+avec les clics et impressions. « À renforcer » = au moins 500 impressions et PageRank < 40 ; « popularité gaspillée » =
+PageRank ≥ 60 sans clic. Un clic sur une URL liste les pages qui pointent vers elle et ses liens sortants.
+
+Chaque vue commence par un encadré « À quoi sert cette vue ? » (ce qu'on y voit, comment lire, que faire), repliable.

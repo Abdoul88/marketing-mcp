@@ -38,8 +38,14 @@ const mediane = (l: number[]) => { const s = [...l].sort((a, b) => a - b); retur
 
 function texteVisible(html: string): string {
   return (/<body[^>]*>([\s\S]*)<\/body>/i.exec(html)?.[1] ?? html)
-    .replace(/<(script|style|nav|header|footer|noscript)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ");
+    .replace(/<(script|style|nav|header|footer|noscript|svg|template|iframe|button|form)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;|&#\d+;/gi, " ");
 }
+
+// Résidus techniques et mots d'interface qui ne disent rien du sujet.
+const BRUIT = new Set("button nbsp type class clas role aria href http https html div span true false null undefined cookie cookies menu fermer close accept accepter connexion compte panier " +
+  "nous vous notre votre tout tous toute toutes avant apres jusqu pres plus tres aussi ainsi alors donc encore cette cet ces sont etre avoir fait faire peut entre sous dont chaque".split(" "));
 
 export function profiler(url: string, html: string, requete: string, position?: number): ProfilPage {
   const a = analyserHtml(url, html, 200, url, 0);
@@ -58,8 +64,8 @@ export function profiler(url: string, html: string, requete: string, position?: 
 }
 
 /** Termes présents dans au moins 2 pages du top 3 : le lexique attendu par Google sur la requête. */
-export function termesAttendus(textes: string[], requete: string): string[] {
-  const exclus = new Set(tokens(requete));
+export function termesAttendus(textes: string[], requete: string, marques: string[] = []): string[] {
+  const exclus = new Set([...tokens(requete), ...BRUIT, ...marques.flatMap((m) => tokens(m))]);
   const df = new Map<string, number>();
   for (const t of textes) for (const m of new Set(tokens(t))) if (m.length > 3 && !exclus.has(m) && !/^\d+$/.test(m)) df.set(m, (df.get(m) ?? 0) + 1);
   const tf = new Map<string, number>();
@@ -68,7 +74,9 @@ export function termesAttendus(textes: string[], requete: string): string[] {
 }
 
 export function comparer(requete: string, maPage: ProfilPage | null, monTexte: string, concurrents: Array<{ profil: ProfilPage; texte: string }>): ResultatBenchmark {
-  const attendus = termesAttendus(concurrents.map((c) => c.texte), requete);
+  // Les noms des concurrents (zenpark, parclick…) ne sont pas des termes à reprendre.
+  const marques = concurrents.map((c) => { try { return new URL(c.profil.url).hostname.replace(/^www\./, "").split(".")[0]!; } catch { return ""; } }).filter(Boolean);
+  const attendus = termesAttendus(concurrents.map((c) => c.texte), requete, marques);
   const couv = (texte: string) => { const t = new Set(tokens(texte)); return attendus.length ? Math.round((attendus.filter((m) => t.has(m)).length / attendus.length) * 100) / 100 : 0; };
   for (const c of concurrents) c.profil.couverture = couv(c.texte);
   if (maPage) maPage.couverture = couv(monTexte);

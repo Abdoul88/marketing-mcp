@@ -189,3 +189,14 @@ describe("KR Organic Search Visibility", () => {
     expect(new RegExp(rx[0]!).test("parking (paris) pas cher")).toBe(false);
   });
 });
+
+import { pagerankInterne } from "../src/dashboard/crawl.js";
+
+describe("maillage", () => {
+  it("donne le PageRank interne le plus haut à la page la plus liée", () => {
+    const p = (url: string, liens: string[]) => ({ url, liens, status: 200 });
+    const pr = pagerankInterne([p("https://s.fr/", ["https://s.fr/a", "https://s.fr/b"]), p("https://s.fr/a", ["https://s.fr/b"]), p("https://s.fr/b", ["https://s.fr/"]), p("https://s.fr/c", ["https://s.fr/b"])]);
+    expect(pr.get("https://s.fr/b")).toBe(100);
+    expect(pr.get("https://s.fr/c")).toBe(0);
+  });
+});

@@ -409,3 +409,27 @@ export async function crawler(siteUrl: string, opts: OptionsCrawl & { cleFirecra
   res.complet = r.pages.length < (opts.maxPages ?? 500);
   return res;
 }
+
+/**
+ * PageRank interne (popularité transmise par les liens du site), normalisé de 0 à 100
+ * sur une échelle logarithmique : 100 = la page la plus « poussée » par le maillage.
+ */
+export function pagerankInterne(pages: Array<{ url: string; liens: string[]; status: number }>, iterations = 30, d = 0.85): Map<string, number> {
+  const cle = (u: string) => u.replace(/\/$/, "");
+  const ok = pages.filter((p) => p.status >= 200 && p.status < 300);
+  const idx = new Map(ok.map((p, i) => [cle(p.url), i]));
+  const sorties = ok.map((p) => [...new Set(p.liens.map((l) => idx.get(cle(l))).filter((i): i is number => i != null))]);
+  const n = ok.length || 1;
+  let pr = new Array(ok.length).fill(1 / n);
+  for (let k = 0; k < iterations; k++) {
+    const nv = new Array(ok.length).fill((1 - d) / n);
+    let perdu = 0;
+    sorties.forEach((s, i) => { if (!s.length) perdu += pr[i]; else for (const j of s) nv[j] += (d * pr[i]) / s.length; });
+    for (let i = 0; i < nv.length; i++) nv[i] += (d * perdu) / n;
+    pr = nv;
+  }
+  const mx = Math.max(...pr), mn = Math.min(...pr);
+  const out = new Map<string, number>();
+  ok.forEach((p, i) => out.set(p.url, mx > mn ? Math.round((Math.log(pr[i] / mn) / Math.log(mx / mn)) * 100) : 100));
+  return out;
+}
